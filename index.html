@@ -1,13 +1,14 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 2.2 (V2.2)
+  VERSION ACTUELLE : Version 2.3 (V2.3)
   
   HISTORIQUE DES VERSIONS :
   - V1.0 : Version initiale (rayons, dictée vocale, prix de base).
   - V1.8 : Sécurisation du stockage local et message d'accueil.
   - V2.1 : Panneau d'édition unique avec 3 champs simultanés (✏️).
-  - V2.2 : Découpage automatique multi-articles à la dictée et à la saisie.
+  - V2.2 : Découpage multi-articles (correctif syntaxe regex).
+  - V2.3 : Rétablissement garanti du message initial et découpage robuste.
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -15,7 +16,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.2)</title>
+  <title>Ma Liste de Courses - Super U (V2.3)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -246,7 +247,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.2 (V2.2)</div>
+    <div class="version-tag">Version 2.3 (V2.3)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -343,25 +344,27 @@
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
-    // 4. PARSING ET DÉCOUPAGE MULTI-ARTICLES
+    // 4. PARSING ET DÉCOUPAGE
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
     function splitMultiItems(rawText) {
-      let text = (rawText || '').trim();
-      // Supprime les formules de politesse ou de commande usuelles
+      if (!rawText) return [];
+      let text = rawText.trim();
       text = text.replace(/^(je\s+veux|ajoute|mets|il\s+me\s+faut|rajoute|donne-moi)\s+/i, '');
 
-      // Découpe selon virgule, point-virgule, point, ou mots de liaison (et, puis, ensuite)
-      const segments = text.split(/(?:,|\.|\;|\bet\b|\bpuis\b|\bensuite\b)+/i);
-      return segments.map(s => s.trim()).filter(s => s.length > 0);
+      // Découpage propre sans casser les mots
+      const rawSegments = text.split(/,|\.|\;|\r?\n|\bet\b|\bpuis\b|\bensuite\b/gi);
+      return rawSegments
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
     }
 
     function parseItemText(rawText) {
       let text = (rawText || '').trim();
-      // Nettoyage des petits mots de liaison résiduels en début de segment (ex. "du", "de la", "des", "le", "la")
       text = text.replace(/^(du|de\s+la|des|le|la|les|d')\s+/i, '');
 
-      const firstWord = text.split(' ')[0].toLowerCase();
+      const words = text.split(' ');
+      const firstWord = words[0] ? words[0].toLowerCase() : '';
       if (NUMBER_WORDS[firstWord] !== undefined) {
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
@@ -455,14 +458,13 @@
       } catch (e) {}
     }
 
-    // AJOUT AVEC DÉCOUPAGE MULTI-SEGMENTS
     function addItemsFromText(rawText) {
       if (!rawText || rawText.trim() === '') return;
       const segments = splitMultiItems(rawText);
 
       segments.forEach(seg => {
         const parsed = parseItemText(seg);
-        if (parsed.name) {
+        if (parsed.name && parsed.name.trim() !== '') {
           const category = getCategoryForProduct(parsed.name);
           items.push({
             id: Date.now() + Math.random(),
@@ -581,6 +583,93 @@
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
-    // 6. AFFICHAGE DES ARTICLES
+    // 6. AFFICHAGE DES ARTICLES ET DU MESSAGE INITIAL
     function renderList() {
-      listContainer.inn
+      listContainer.innerHTML = '';
+      
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
+
+      if (items.length === 0) {
+        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
+        return;
+      }
+
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+
+        if (categoryItems.length > 0) {
+          const card = document.createElement('div');
+          card.className = 'category-card';
+
+          const title = document.createElement('h2');
+          title.className = 'category-title';
+          title.textContent = category;
+          card.appendChild(title);
+
+          const ul = document.createElement('ul');
+          categoryItems.forEach(item => {
+            const li = document.createElement('li');
+            if (item.checked) li.classList.add('checked');
+
+            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
+            const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
+            const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
+
+            li.innerHTML = `
+              <div class="item-left">
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
+                <button class="edit-btn" onclick="openEditBox(${item.id})" title="Modifier">✏️</button>
+                ${qtyBadge}
+                ${priceBadge}
+                <span class="item-name">${item.name}</span>
+              </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+            `;
+            ul.appendChild(li);
+          });
+
+          card.appendChild(ul);
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    // 7. GESTION DU MICROPHONE (Code exact V1.8)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        micBtn.textContent = '🛑 Écoute...';
+        micBtn.classList.add('listening');
+      };
+      recognition.onresult = (event) => addItemsFromText(event.results[0][0].transcript);
+      recognition.onend = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      recognition.onerror = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      micBtn.addEventListener('click', () => recognition.start());
+    } else {
+      micBtn.disabled = true;
+      micBtn.textContent = '🎤 Non supporté';
+    }
+
+    addBtn.addEventListener('click', () => addItemsFromText(itemInput.value));
+    itemInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addItemsFromText(itemInput.value);
+    });
+    emailBtn.addEventListener('click', sendByEmail);
+    clearBtn.addEventListener('click', clearAllItems);
+
+    renderList();
+  </script>
+</body>
+</html>
