@@ -1,12 +1,13 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 2.6 (V2.6)
+  VERSION ACTUELLE : Version 2.7 (V2.7)
   
   HISTORIQUE DES VERSIONS :
-  - V1.0 : Version initiale.
-  - V1.8 : Socle stable avec message d'accueil.
-  - V2.6 : Nettoyage complet, code ultra-léger et déblocage garanti.
+  - V1.0 : Version initiale (rayons, micro, prix de base).
+  - V1.8 : Sécurisation du stockage local et message d'accueil.
+  - V2.6 : Nettoyage complet du code pour compatibilité mobile.
+  - V2.7 : Découpage intelligent multi-articles sans expressions complexes et nettoyage des intros.
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -14,7 +15,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.6)</title>
+  <title>Ma Liste de Courses - Super U (V2.7)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -192,7 +193,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.6 (V2.6)</div>
+    <div class="version-tag">Version 2.7 (V2.7)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -203,7 +204,7 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
+    <input type="text" id="itemInput" placeholder="Ex. 3 paquets de pâtes 2 laits 4 pommes..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
@@ -221,28 +222,30 @@
       "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
     ];
 
-    // 2. MOTS-CLÉS
+    // 2. MOTS-CLÉS PAR RAYON
     const CATEGORY_KEYWORDS = {
       "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
       "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
       "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
-      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
+      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "coca zéro", "sirop"],
       "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
-      "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
-      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain de mie", "biscotte", "croissant", "brioche"],
+      "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "passe", "passes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "baguette", "pain de mie", "biscotte", "croissant", "brioche"],
       "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
       "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
       "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
       "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
-      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises", "asperge", "asperges"],
+      "12. Fruits & Légumes Frais": ["pomme", "pommes", "poire", "poires", "banane", "bananes", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "courgettes", "oignon", "oignons", "pomme de terre", "orange", "citron", "fraise", "fraises", "asperge", "asperges"],
       "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
       "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
     };
 
-    // 3. TABLE DES PRIX
+    // 3. TABLE DES PRIX ESTIMATIFS
     const PRICE_DATABASE = {
       "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
+      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
+      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
       "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
       "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
       "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
@@ -251,23 +254,76 @@
       "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
       "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
       "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
+      "asperge": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
+      "asperges": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
       "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
       "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
       "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
       "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
-      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
+      "passe": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
+      "passes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
+      "pain de mie": { defaultPrice: 1.45, pricePerKgOrL: null },
+      "pain": { defaultPrice: 1.10, pricePerKgOrL: null },
+      "coca": { defaultPrice: 1.95, pricePerKgOrL: null },
       "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
+    // 4. DÉCOUPAGE ROBUSTE ET COMPATIBLE MOBILE
+    function isQuantityWord(token) {
+      if (!token) return false;
+      const clean = token.toLowerCase();
+      if (!isNaN(parseFloat(clean))) return true;
+      if (NUMBER_WORDS[clean] !== undefined) return true;
+      return false;
+    }
+
+    function splitMultiItems(rawText) {
+      if (!rawText) return [];
+      let text = rawText.trim();
+
+      // Suppression des expressions d'introduction usuelles
+      text = text.replace(/^(là\s*,?\s*)?(alors\s+)?(on\s+va\s+prendre|il\s+faut\s+(prendre|ajouter|mettre|enlever)?|je\s+veux|il\s+me\s+faut|ajoute|mets|rajoute|donne-moi)\s+/i, '');
+
+      // Découpe par ponctuation et connecteurs
+      const roughParts = text.split(/,|\.|\;|\r?\n|\bet\b|\bpuis\b|\bensuite\b/i);
+      const itemsList = [];
+
+      roughParts.forEach(part => {
+        const words = part.trim().split(/\s+/);
+        if (words.length === 0 || words[0] === '') return;
+
+        let currentSegment = [];
+
+        for (let i = 0; i < words.length; i++) {
+          const w = words[i];
+          // Si on croise un nombre et qu'on a déjà constitué un début d'article, on sépare
+          if (currentSegment.length > 0 && isQuantityWord(w)) {
+            itemsList.push(currentSegment.join(' '));
+            currentSegment = [w];
+          } else {
+            currentSegment.push(w);
+          }
+        }
+
+        if (currentSegment.length > 0) {
+          itemsList.push(currentSegment.join(' '));
+        }
+      });
+
+      return itemsList.filter(item => item.trim().length > 0);
+    }
+
     function parseItemText(rawText) {
       let text = (rawText || '').trim();
-      const firstWord = text.split(' ')[0].toLowerCase();
+      text = text.replace(/^(du|de\s+la|des|le|la|les|d')\s+/i, '');
+
+      const words = text.split(' ');
+      const firstWord = words[0] ? words[0].toLowerCase() : '';
       if (NUMBER_WORDS[firstWord] !== undefined) {
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
@@ -283,6 +339,11 @@
         val = parseFloat(match[1].replace(',', '.'));
         unit = match[2] ? match[2].toLowerCase() : '';
         name = match[3].trim();
+      }
+
+      // Correction phonétique courante de la reconnaissance vocale pour "pâtes"
+      if (name.toLowerCase() === 'passes' || name.toLowerCase() === 'passe') {
+        name = 'pâtes';
       }
 
       let estimatedPrice = 2.50;
@@ -308,7 +369,7 @@
       };
     }
 
-    // 4. DONNÉES SÉCURISÉES
+    // 5. GESTION DES DONNÉES
     let items = [];
     try {
       const stored = localStorage.getItem('myShoppingList');
@@ -353,18 +414,23 @@
       } catch (e) {}
     }
 
-    function addItem(rawText) {
+    function addItemsFromText(rawText) {
       if (!rawText || rawText.trim() === '') return;
-      const parsed = parseItemText(rawText);
-      const category = getCategoryForProduct(parsed.name);
+      const segments = splitMultiItems(rawText);
 
-      items.push({
-        id: Date.now(),
-        name: parsed.name,
-        quantity: parsed.quantity,
-        estimatedPrice: parsed.estimatedPrice,
-        category: category,
-        checked: false
+      segments.forEach(seg => {
+        const parsed = parseItemText(seg);
+        if (parsed.name && parsed.name.trim() !== '') {
+          const category = getCategoryForProduct(parsed.name);
+          items.push({
+            id: Date.now() + Math.random(),
+            name: parsed.name,
+            quantity: parsed.quantity,
+            estimatedPrice: parsed.estimatedPrice,
+            category: category,
+            checked: false
+          });
+        }
       });
 
       saveItems();
@@ -377,7 +443,7 @@
       if (!item) return;
 
       const currentText = item.quantity ? `${item.quantity} ${item.name}` : item.name;
-      const newText = prompt("Modifier la désignation / quantité :", currentText);
+      const newText = prompt("Modifier la quantité / désignation :", currentText);
       if (newText === null || newText.trim() === '') return;
 
       const newPrice = prompt("Modifier le prix (€) :", item.estimatedPrice.toFixed(2));
@@ -453,7 +519,7 @@
       window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
     }
 
-    // 5. AFFICHAGE DES ARTICLES
+    // 6. AFFICHAGE DES ARTICLES ET MESSAGE D'ACCUEIL
     function renderList() {
       listContainer.innerHTML = '';
       
@@ -489,56 +555,4 @@
               <div class="item-left">
                 <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
                 <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
-                ${qtyBadge}
-                ${priceBadge}
-                <span class="item-name">${item.name}</span>
-              </div>
-              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
-            `;
-            ul.appendChild(li);
-          });
-
-          card.appendChild(ul);
-          listContainer.appendChild(card);
-        }
-      });
-    }
-
-    // 6. MICROPHONE
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
+              
