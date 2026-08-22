@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1)</title>
+  <title>Ma Liste de Courses - Super U (V1.2)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -65,12 +65,13 @@
       gap: 8px;
       margin-bottom: 15px;
     }
-    input[type="text"] {
+    input[type="text"], input[type="number"] {
       flex: 1;
       padding: 12px;
       font-size: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     button {
       padding: 10px 14px;
@@ -128,6 +129,12 @@
       background-color: #bdc3c7;
       text-decoration: line-through;
     }
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
     .qty-badge {
       background-color: #e67e22;
       color: white;
@@ -135,7 +142,6 @@
       font-weight: bold;
       padding: 2px 6px;
       border-radius: 10px;
-      margin-right: 6px;
     }
     .price-badge {
       background-color: #16a085;
@@ -144,18 +150,13 @@
       font-weight: bold;
       padding: 2px 6px;
       border-radius: 10px;
-      margin-right: 6px;
-    }
-    .btn-group {
-      display: flex;
-      gap: 5px;
     }
     .edit-btn {
-      background: #2980b9;
-      color: white;
-      border: none;
+      background: #e2e8f0;
+      color: #2c3e50;
+      border: 1px solid #cbd5e1;
       border-radius: 4px;
-      padding: 4px 8px;
+      padding: 3px 6px;
       cursor: pointer;
       font-size: 12px;
     }
@@ -173,13 +174,71 @@
       color: #7f8c8d;
       margin-top: 30px;
     }
+
+    /* Fenêtre modale de modification */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 {
+      margin-top: 0;
+      color: #2c3e50;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    .modal-field {
+      margin-bottom: 10px;
+    }
+    .modal-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .modal-field input {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    .modal-btn-save {
+      flex: 1;
+      background-color: #27ae60;
+    }
+    .modal-btn-cancel {
+      flex: 1;
+      background-color: #95a5a6;
+    }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.0 (V1)</div>
+    <div class="version-tag">Version 1.2 (V1.2)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -196,6 +255,30 @@
   </div>
 
   <div id="listContainer"></div>
+
+  <!-- Fenêtre modale d'édition groupée -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <h3>Modifier l'article</h3>
+      <input type="hidden" id="modalItemId" />
+      <div class="modal-field">
+        <label for="modalItemQty">Quantité (ex. 1 kg, 2, 500g) :</label>
+        <input type="text" id="modalItemQty" />
+      </div>
+      <div class="modal-field">
+        <label for="modalItemName">Désignation :</label>
+        <input type="text" id="modalItemName" />
+      </div>
+      <div class="modal-field">
+        <label for="modalItemPrice">Prix total estimé (€) :</label>
+        <input type="number" step="0.01" id="modalItemPrice" />
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn-save" id="modalSaveBtn">Enregistrer</button>
+        <button class="modal-btn-cancel" id="modalCancelBtn">Annuler</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // 1. ORDRE DES RAYONS
@@ -304,6 +387,15 @@
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
 
+    // Éléments de la fenêtre modale
+    const editModal = document.getElementById('editModal');
+    const modalItemId = document.getElementById('modalItemId');
+    const modalItemQty = document.getElementById('modalItemQty');
+    const modalItemName = document.getElementById('modalItemName');
+    const modalItemPrice = document.getElementById('modalItemPrice');
+    const modalSaveBtn = document.getElementById('modalSaveBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+
     function getCategoryForProduct(name) {
       const cleanName = name.toLowerCase().trim();
       for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
@@ -337,27 +429,37 @@
       itemInput.value = '';
     }
 
-    // FONCTION D'ÉDITION DU NOM ET DU PRIX
-    function editItem(id) {
-      const itemToEdit = items.find(item => item.id === id);
-      if (!itemToEdit) return;
+    // OUVERTURE DE LA MODALE AVEC LES 3 CHAMPS
+    function openEditModal(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
 
-      const currentName = itemToEdit.name;
-      const newName = prompt("Modifier la désignation :", currentName);
-      if (newName === null) return;
+      modalItemId.value = item.id;
+      modalItemQty.value = item.quantity || '';
+      modalItemName.value = item.name;
+      modalItemPrice.value = item.estimatedPrice.toFixed(2);
 
-      const currentPrice = itemToEdit.estimatedPrice.toFixed(2);
-      const newPrice = prompt("Modifier le prix (€) :", currentPrice);
-      if (newPrice === null) return;
+      editModal.style.display = 'flex';
+      modalItemName.focus();
+    }
 
-      const cleanPrice = parseFloat(newPrice.replace(',', '.'));
+    function closeEditModal() {
+      editModal.style.display = 'none';
+    }
+
+    modalSaveBtn.addEventListener('click', () => {
+      const id = parseInt(modalItemId.value, 10);
+      const newQty = modalItemQty.value.trim();
+      const newName = modalItemName.value.trim();
+      const newPrice = parseFloat(modalItemPrice.value.replace(',', '.'));
 
       items = items.map(item => {
         if (item.id === id) {
-          const finalName = newName.trim() !== '' ? newName.trim() : item.name;
-          const finalPrice = !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : item.estimatedPrice;
+          const finalName = newName !== '' ? newName : item.name;
+          const finalPrice = !isNaN(newPrice) && newPrice >= 0 ? Number(newPrice.toFixed(2)) : item.estimatedPrice;
           return {
             ...item,
+            quantity: newQty,
             name: finalName,
             category: getCategoryForProduct(finalName),
             estimatedPrice: finalPrice
@@ -368,7 +470,10 @@
 
       saveItems();
       renderList();
-    }
+      closeEditModal();
+    });
+
+    modalCancelBtn.addEventListener('click', closeEditModal);
 
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
@@ -376,10 +481,16 @@
       renderList();
     }
 
+    // SUPPRESSION AVEC CONFIRMATION
     function deleteItem(id) {
-      items = items.filter(item => item.id !== id);
-      saveItems();
-      renderList();
+      const itemToDelete = items.find(item => item.id === id);
+      const itemName = itemToDelete ? itemToDelete.name : "cet article";
+      
+      if (confirm(`Es-tu sûr de vouloir supprimer "${itemName}" de la liste ?`)) {
+        items = items.filter(item => item.id !== id);
+        saveItems();
+        renderList();
+      }
     }
 
     function clearAllItems() {
@@ -454,16 +565,14 @@
             const priceBadge = item.estimatedPrice ? `<span class="price-badge">~${item.estimatedPrice.toFixed(2)} €</span>` : '';
 
             li.innerHTML = `
-              <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="margin-right: 10px;">
+              <div class="item-left">
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
+                <button class="edit-btn" onclick="openEditModal(${item.id})" title="Modifier l'article">✏️</button>
                 ${qtyBadge}
                 ${priceBadge}
                 <span class="item-name">${item.name}</span>
-              </label>
-              <div class="btn-group">
-                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
-                <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
               </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
             `;
             ul.appendChild(li);
           });
@@ -474,42 +583,9 @@
       });
     }
 
-    // GESTION DU MICROPHONE (Version d'origine)
+    // GESTION DU MICROPHONE
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
- 
+      recognitio
