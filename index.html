@@ -179,7 +179,7 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de sucre..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 1 pack eau..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
@@ -197,55 +197,101 @@
       "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
     ];
 
-    // 2. MOTS-CLÉS DÉTAILLÉS PAR RAYON
+    // 2. MOTS-CLÉS PAR RAYON
     const CATEGORY_KEYWORDS = {
       "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
       "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
       "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
-      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
+      "4. Boissons & Apéritif": ["eau", "pack eau", "jus", "jus d'orange", "vin", "bière", "biere", "chips", "gâteau apéro", "cacahuète", "soda", "coca", "sirop"],
       "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
       "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
       "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "baguette", "pain de mie", "biscotte", "croissant", "brioche"],
       "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
-      "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
-      "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
+      "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "javel"],
+      "10. Frais Emballé & Traiteur": ["jambon", "pâte fraîche", "pates fraiches", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
       "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie"],
-      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "salade", "carotte", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
+      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise"],
       "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
-      "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
-      "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
+      "14. Crèmerie & Produits Laitiers": ["lait", "crème", "creme", "yaourt", "yaourts", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
+      "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza"]
     };
 
-    // 3. TABLE COMPLÈTE DES PRIX ESTIMATIFS
+    // 3. BASE DE DONNÉES ÉLARGIE DES PRIX
     const PRICE_DATABASE = {
-      "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
-      "sucre": { defaultPrice: 1.50, pricePerKgOrL: 1.50 },
-      "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
-      "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
-      "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
-      "reblochon": { defaultPrice: 4.80, pricePerKgOrL: 10.50 },
-      "gruyère": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
-      "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
-      "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
-      "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
-      "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
-      "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
-      "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
-      "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
-      "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-      "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-      "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
-      "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null },
-      "sopalin": { defaultPrice: 2.50, pricePerKgOrL: null },
-      "thon": { defaultPrice: 2.00, pricePerKgOrL: null },
-      "saumon": { defaultPrice: 4.50, pricePerKgOrL: 22.00 },
-      "yaourt": { defaultPrice: 2.20, pricePerKgOrL: null },
-      "pain": { defaultPrice: 1.20, pricePerKgOrL: null },
-      "baguette": { defaultPrice: 1.20, pricePerKgOrL: null },
-      "coca": { defaultPrice: 1.80, pricePerKgOrL: 1.20 }
+      // Boissons & Liquides
+      "eau": { unitPrice: 2.10 },
+      "pack eau": { unitPrice: 2.10 },
+      "jus": { unitPrice: 1.85, perKiloOrLiter: 1.85 },
+      "jus d'orange": { unitPrice: 1.85, perKiloOrLiter: 1.85 },
+      "coca": { unitPrice: 1.95, perKiloOrLiter: 1.30 },
+      "soda": { unitPrice: 1.80 },
+      "bière": { unitPrice: 3.80 },
+      "biere": { unitPrice: 3.80 },
+      "vin": { unitPrice: 4.50 },
+
+      // Produits laitiers & Crèmerie
+      "lait": { unitPrice: 1.10, perKiloOrLiter: 1.10 },
+      "beurre": { unitPrice: 2.35, perKiloOrLiter: 9.40 },
+      "crème": { unitPrice: 1.40 },
+      "creme": { unitPrice: 1.40 },
+      "yaourt": { unitPrice: 2.10 },
+      "yaourts": { unitPrice: 2.10 },
+      "reblochon": { unitPrice: 4.90, perKiloOrLiter: 10.80 },
+      "gruyère": { unitPrice: 1.95, perKiloOrLiter: 9.75 },
+      "gruyere": { unitPrice: 1.95, perKiloOrLiter: 9.75 },
+      "emmental": { unitPrice: 1.90, perKiloOrLiter: 9.50 },
+
+      // Épicerie & Pâtisserie
+      "sucre": { unitPrice: 1.45, perKiloOrLiter: 1.45 },
+      "farine": { unitPrice: 1.15, perKiloOrLiter: 1.15 },
+      "oeuf": { unitPrice: 2.65 },
+      "oeufs": { unitPrice: 2.65 },
+      "pâte": { unitPrice: 1.25, perKiloOrLiter: 1.25 },
+      "pâtes": { unitPrice: 1.25, perKiloOrLiter: 1.25 },
+      "riz": { unitPrice: 1.60, perKiloOrLiter: 1.60 },
+      "huile": { unitPrice: 2.90, perKiloOrLiter: 2.90 },
+      "café": { unitPrice: 3.40 },
+      "cafe": { unitPrice: 3.40 },
+      "thé": { unitPrice: 2.20 },
+      "the": { unitPrice: 2.20 },
+      "pain": { unitPrice: 1.10 },
+      "baguette": { unitPrice: 1.10 },
+      "pain de mie": { unitPrice: 1.45 },
+
+      // Fruits & Légumes
+      "tomate": { unitPrice: 2.50, perKiloOrLiter: 2.50 },
+      "tomates": { unitPrice: 2.50, perKiloOrLiter: 2.50 },
+      "carotte": { unitPrice: 1.70, perKiloOrLiter: 1.70 },
+      "carottes": { unitPrice: 1.70, perKiloOrLiter: 1.70 },
+      "courgette": { unitPrice: 2.10, perKiloOrLiter: 2.10 },
+      "salade": { unitPrice: 1.20 },
+      "pomme": { unitPrice: 2.40, perKiloOrLiter: 2.40 },
+      "banane": { unitPrice: 1.90, perKiloOrLiter: 1.90 },
+      "pomme de terre": { unitPrice: 1.80, perKiloOrLiter: 1.80 },
+
+      // Boucherie, Traiteur & Poissonnerie
+      "poulet": { unitPrice: 6.50, perKiloOrLiter: 9.80 },
+      "steak": { unitPrice: 4.60, perKiloOrLiter: 15.50 },
+      "rôti": { unitPrice: 8.50, perKiloOrLiter: 14.00 },
+      "roti": { unitPrice: 8.50, perKiloOrLiter: 14.00 },
+      "jambon": { unitPrice: 2.45 },
+      "lardons": { unitPrice: 1.85 },
+      "thon": { unitPrice: 2.05 },
+      "saumon": { unitPrice: 4.80, perKiloOrLiter: 22.50 },
+      "cabillaud": { unitPrice: 5.20, perKiloOrLiter: 19.00 },
+
+      // Entretien & Hygiène
+      "sopalin": { unitPrice: 2.50 },
+      "essuie-tout": { unitPrice: 2.50 },
+      "papier toilette": { unitPrice: 3.40 },
+      "lessive": { unitPrice: 7.60 },
+      "liquide vaisselle": { unitPrice: 1.65 },
+      "éponge": { unitPrice: 1.50 },
+      "shampoing": { unitPrice: 2.80 },
+      "gel douche": { unitPrice: 2.10 },
+      "dentifrice": { unitPrice: 1.90 }
     };
 
-    // 4. PARSING DES QUANTITÉS ET UNITÉS
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
     function parseItemText(rawText) {
@@ -255,7 +301,7 @@
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
 
-      const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|grammes?|l|litres?|boîtes?|boites?|paquets?|bouteilles?|pots?|tranches?|sacs?|rouleaux?)?\s*(?:d'|de\s+)?(.*)$/i;
+      const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|grammes?|l|litres?|boîtes?|boites?|paquets?|bouteilles?|pots?|tranches?|rouleaux?|sacs?)?\s*(?:d'|de\s+)?(.*)$/i;
       const match = text.match(regex);
 
       let val = 1;
@@ -268,31 +314,39 @@
         name = match[3].trim();
       }
 
-      let estimatedPrice = 2.50 * val;
+      let price = 2.00;
       const cleanName = name.toLowerCase();
 
+      let matchedData = null;
       for (const [key, data] of Object.entries(PRICE_DATABASE)) {
         if (cleanName.includes(key)) {
-          if ((unit.startsWith('k') || unit.startsWith('l')) && data.pricePerKgOrL) {
-            estimatedPrice = data.pricePerKgOrL * val;
-          } else if (unit.startsWith('g') && data.pricePerKgOrL) {
-            estimatedPrice = data.pricePerKgOrL * (val / 1000);
-          } else {
-            estimatedPrice = data.defaultPrice * val;
-          }
+          matchedData = data;
           break;
         }
+      }
+
+      if (matchedData) {
+        if ((unit.startsWith('k') || unit === 'l' || unit.startsWith('litre')) && matchedData.perKiloOrLiter) {
+          price = matchedData.perKiloOrLiter * val;
+        } else if (unit.startsWith('g') && matchedData.perKiloOrLiter) {
+          price = matchedData.perKiloOrLiter * (val / 1000);
+        } else if (unit.startsWith('tranche') || unit.startsWith('rouleau')) {
+          price = matchedData.unitPrice;
+        } else {
+          price = matchedData.unitPrice * val;
+        }
+      } else {
+        price = 2.00 * (unit.startsWith('tranche') ? 1 : val);
       }
 
       return {
         rawInput: rawText,
         quantity: match ? (unit ? `${val} ${unit}` : `${val}`) : '',
         name: name,
-        estimatedPrice: Number(estimatedPrice.toFixed(2))
+        estimatedPrice: Number(price.toFixed(2))
       };
     }
 
-    // 5. GESTION DES DONNÉES
     let items = JSON.parse(localStorage.getItem('myShoppingList')) || [];
 
     const itemInput = document.getElementById('itemInput');
@@ -390,8 +444,6 @@
           });
           saveItems();
           renderList();
-        } else {
-          alert("Veuillez entrer un nombre valide.");
         }
       }
     }
@@ -410,14 +462,13 @@
 
     function clearAllItems() {
       if (items.length === 0) return;
-      if (confirm("Es-tu sûr de vouloir vider toute la liste de courses ?")) {
+      if (confirm("Vider entièrement la liste ?")) {
         items = [];
         saveItems();
         renderList();
       }
     }
 
-    // 6. ENVOI PAR E-MAIL
     function sendByEmail() {
       if (items.length === 0) {
         alert("La liste est vide !");
@@ -443,10 +494,8 @@
       window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
     }
 
-    // 7. AFFICHAGE DES ARTICLES
     function renderList() {
       listContainer.innerHTML = '';
-      
       const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
       budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
 
@@ -499,7 +548,6 @@
       });
     }
 
-    // 8. GESTION DU MICROPHONE
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -511,29 +559,4 @@
         micBtn.textContent = '🛑 Écoute...';
         micBtn.classList.add('listening');
       };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
+      recognition.onresult = (event) => addItem(event.results[0][0].tran
