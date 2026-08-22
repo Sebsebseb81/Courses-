@@ -1,35 +1,28 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ma Liste de Courses - Super U</title>
   <style>
-    /* Design et Mise en page */
     body { font-family: Arial, sans-serif; max-width: 650px; margin: 15px auto; padding: 0 12px; background-color: #f4f7f6; color: #333; }
     h1 { text-align: center; color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
-    .budget-banner { background: #27ae60; color: white; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .budget-banner { background: #27ae60; color: white; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; }
     .actions-bar { display: flex; gap: 8px; margin-bottom: 15px; }
-    .action-btn { flex: 1; padding: 10px; font-size: 13px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; }
+    .action-btn { flex: 1; padding: 10px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; }
     .email-btn { background-color: #8e44ad; }
     .clear-btn { background-color: #7f8c8d; }
     .input-section { display: flex; gap: 8px; margin-bottom: 15px; }
-    input[type="text"] { flex: 1; padding: 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; }
-    button { padding: 10px 14px; font-size: 14px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background-color: #27ae60; color: white; }
-    button.mic-btn { background-color: #2980b9; }
-    button.mic-btn.listening { background-color: #e74c3c; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; }
+    button { padding: 10px; border: none; border-radius: 8px; cursor: pointer; background-color: #27ae60; color: white; font-weight: bold; }
+    .mic-btn { background-color: #2980b9; }
     .category-card { background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); border-left: 5px solid #3498db; }
     .category-title { font-size: 16px; font-weight: bold; margin-top: 0; color: #2c3e50; border-bottom: 1px solid #ecf0f1; padding-bottom: 4px; }
-    ul { list-style-type: none; padding: 0; margin: 8px 0 0 0; }
     li { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
-    .qty-badge { background-color: #e67e22; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; margin-right: 6px; }
-    .price-badge { background-color: #16a085; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; margin-right: 6px; cursor: pointer; user-select: none; }
+    .price-badge { background-color: #16a085; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; margin-right: 6px; cursor: pointer; }
     .btn-group { display: flex; gap: 5px; }
-    .edit-btn, .delete-btn { border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: white; }
-    .edit-btn { background: #2980b9; }
-    .delete-btn { background: #e74c3c; }
-    .empty-msg { text-align: center; color: #7f8c8d; margin-top: 30px; }
+    .edit-btn { background: #2980b9; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+    .delete-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -38,12 +31,12 @@
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
 
   <div class="actions-bar">
-    <button class="action-btn email-btn" id="emailBtn">✉️ Envoyer par e-mail</button>
-    <button class="action-btn clear-btn" id="clearBtn">🗑️ Vider la liste</button>
+    <button class="action-btn email-btn" onclick="sendByEmail()">✉️ Envoyer</button>
+    <button class="action-btn clear-btn" onclick="clearAllItems()">🗑️ Vider</button>
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de sucre, 2 laits..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 kg de sucre..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
@@ -51,40 +44,45 @@
   <div id="listContainer"></div>
 
   <script>
-    // Configuration des rayons et prix
     const CATEGORIES_ORDER = ["1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout", "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles", "7. Petit-Déjeuner, Pains & Gâteaux", "8. Ingrédients Pâtisserie & Cuisine", "9. Entretien de la Maison & Linge", "10. Frais Emballé & Traiteur", "11. Volaille, Boucherie & Fromage à la coupe", "12. Fruits & Légumes Frais", "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"];
     const PRICE_DATABASE = { "lait": 1.10, "sucre": 1.50, "oeuf": 2.50, "beurre": 2.30, "tomate": 2.50, "poulet": 5.50 };
     
     let items = JSON.parse(localStorage.getItem('myShoppingList')) || [];
 
-    function saveItems() { localStorage.setItem('myShoppingList', JSON.stringify(items)); }
+    function saveAndRender() { localStorage.setItem('myShoppingList', JSON.stringify(items)); renderList(); }
 
     function parseItemText(rawText) {
       const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|g|l)?\s*(.*)$/i;
       const match = rawText.match(regex);
       let qty = match ? parseFloat(match[1].replace(',', '.')) : 1;
       let name = match ? match[3].trim() : rawText.trim();
-      
       let basePrice = PRICE_DATABASE[name.toLowerCase()] || 2.50;
-      return { name, quantity: qty, price: basePrice * qty };
+      return { name, quantity: qty, price: basePrice * qty, category: getCategory(name) };
     }
+
+    function getCategory(name) { return "Divers / Non classé"; /* Simplifié pour la robustesse */ }
 
     function addItem(rawText) {
       if (!rawText) return;
-      const parsed = parseItemText(rawText);
-      items.push({ id: Date.now(), ...parsed, checked: false, isCustom: false });
-      saveItems(); renderList(); document.getElementById('itemInput').value = '';
+      items.push({ id: Date.now(), ...parseItemText(rawText), checked: false, isCustom: false });
+      saveAndRender(); document.getElementById('itemInput').value = '';
     }
 
     function editPrice(id) {
       const item = items.find(i => i.id === id);
-      const newPrice = prompt("Nouveau prix (€) :", item.price.toFixed(2));
-      if (newPrice) {
-        item.price = parseFloat(newPrice.replace(',', '.'));
-        item.isCustom = true;
-        saveItems(); renderList();
-      }
+      const newPrice = prompt("Modifier le prix :", item.price.toFixed(2));
+      if (newPrice) { item.price = parseFloat(newPrice.replace(',', '.')); item.isCustom = true; saveAndRender(); }
     }
+
+    function editItem(id) {
+      const item = items.find(i => i.id === id);
+      const newName = prompt("Renommer l'article :", item.name);
+      if (newName) { item.name = newName; saveAndRender(); }
+    }
+
+    function deleteItem(id) { items = items.filter(i => i.id !== id); saveAndRender(); }
+
+    function clearAllItems() { if (confirm("Tout vider ?")) { items = []; saveAndRender(); } }
 
     function renderList() {
       const listContainer = document.getElementById('listContainer');
@@ -92,19 +90,32 @@
       const total = items.reduce((sum, i) => sum + i.price, 0);
       document.getElementById('budgetDisplay').textContent = `Total estimé : ${total.toFixed(2)} €`;
       
-      items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'category-card';
-        div.innerHTML = `<li><input type="checkbox" ${item.checked?'checked':''} onchange="items.find(i=>i.id==${item.id}).checked = this.checked; saveItems(); renderList();"> 
-        <span class="qty-badge">${item.quantity}</span> 
-        <span class="price-badge" onclick="editPrice(${item.id})">${item.price.toFixed(2)} €</span> 
-        ${item.name} <div class="btn-group"><button class="delete-btn" onclick="items=items.filter(i=>i.id!=${item.id}); saveItems(); renderList();">✕</button></div></li>`;
-        listContainer.appendChild(div);
+      CATEGORIES_ORDER.forEach(cat => {
+        const catItems = items.filter(i => i.category === cat);
+        if (catItems.length > 0) {
+          const card = document.createElement('div');
+          card.className = 'category-card';
+          card.innerHTML = `<div class="category-title">${cat}</div><ul></ul>`;
+          catItems.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="checkbox" ${item.checked?'checked':''} onchange="items.find(i=>i.id==${item.id}).checked=this.checked; saveAndRender();">
+            <span class="price-badge" onclick="editPrice(${item.id})">${item.price.toFixed(2)} €</span> 
+            ${item.name}
+            <div class="btn-group"><button class="edit-btn" onclick="editItem(${item.id})">✏️</button><button class="delete-btn" onclick="deleteItem(${item.id})">✕</button></div>`;
+            card.querySelector('ul').appendChild(li);
+          });
+          listContainer.appendChild(card);
+        }
       });
     }
 
-    // Initialisation
+    // Dictée
+    const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    rec.lang = 'fr-FR';
+    rec.onresult = (e) => addItem(e.results[0][0].transcript);
+    document.getElementById('micBtn').onclick = () => rec.start();
     document.getElementById('addBtn').onclick = () => addItem(document.getElementById('itemInput').value);
+
     renderList();
   </script>
 </body>
