@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1.2)</title>
+  <title>Ma Liste de Courses - Super U (V1.3)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -175,7 +175,7 @@
       margin-top: 30px;
     }
 
-    /* Fenêtre modale de modification */
+    /* Fenêtre modale */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -190,16 +190,16 @@
     }
     .modal-box {
       background: white;
-      padding: 16px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 18px;
+      border-radius: 10px;
+      width: 88%;
+      max-width: 380px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     }
     .modal-box h3 {
       margin-top: 0;
       color: #2c3e50;
-      font-size: 18px;
+      font-size: 17px;
       margin-bottom: 12px;
     }
     .modal-field {
@@ -209,14 +209,14 @@
       display: block;
       font-size: 12px;
       font-weight: bold;
-      color: #555;
+      color: #475569;
       margin-bottom: 4px;
     }
     .modal-field input {
       width: 100%;
       padding: 8px;
       font-size: 14px;
-      border: 1px solid #ccc;
+      border: 1px solid #cbd5e1;
       border-radius: 6px;
     }
     .modal-buttons {
@@ -230,7 +230,7 @@
     }
     .modal-btn-cancel {
       flex: 1;
-      background-color: #95a5a6;
+      background-color: #94a3b8;
     }
   </style>
 </head>
@@ -238,7 +238,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.2 (V1.2)</div>
+    <div class="version-tag">Version 1.3 (V1.3)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -256,7 +256,7 @@
 
   <div id="listContainer"></div>
 
-  <!-- Fenêtre modale d'édition groupée -->
+  <!-- Boîte de dialogue de modification -->
   <div class="modal-overlay" id="editModal">
     <div class="modal-box">
       <h3>Modifier l'article</h3>
@@ -266,15 +266,15 @@
         <input type="text" id="modalItemQty" />
       </div>
       <div class="modal-field">
-        <label for="modalItemName">Désignation :</label>
+        <label for="modalItemName">Désignation de l'article :</label>
         <input type="text" id="modalItemName" />
       </div>
       <div class="modal-field">
-        <label for="modalItemPrice">Prix total estimé (€) :</label>
+        <label for="modalItemPrice">Prix estimé total (€) :</label>
         <input type="number" step="0.01" id="modalItemPrice" />
       </div>
       <div class="modal-buttons">
-        <button class="modal-btn-save" id="modalSaveBtn">Enregistrer</button>
+        <button class="modal-btn-save" id="modalSaveBtn">Valider</button>
         <button class="modal-btn-cancel" id="modalCancelBtn">Annuler</button>
       </div>
     </div>
@@ -304,13 +304,13 @@
       "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
       "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
       "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
-      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "salade", "carotte", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
+      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
       "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
       "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
     };
 
-    // 3. TABLE DES PRIX ESTIMATIFS
+    // 3. BASE DES PRIX ESTIMATIFS
     const PRICE_DATABASE = {
       "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
       "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
@@ -331,7 +331,7 @@
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
-    // 4. PARSING QUANTITÉ ET PRIX
+    // 4. ANALYSE DU TEXTE
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
     function parseItemText(rawText) {
@@ -377,6 +377,7 @@
       };
     }
 
+    // 5. GESTION DES DONNÉES
     let items = JSON.parse(localStorage.getItem('myShoppingList')) || [];
 
     const itemInput = document.getElementById('itemInput');
@@ -387,7 +388,6 @@
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
 
-    // Éléments de la fenêtre modale
     const editModal = document.getElementById('editModal');
     const modalItemId = document.getElementById('modalItemId');
     const modalItemQty = document.getElementById('modalItemQty');
@@ -429,8 +429,8 @@
       itemInput.value = '';
     }
 
-    // OUVERTURE DE LA MODALE AVEC LES 3 CHAMPS
-    function openEditModal(id) {
+    // OUVERTURE DE LA MODALE
+    window.openEditModal = function(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
@@ -441,13 +441,13 @@
 
       editModal.style.display = 'flex';
       modalItemName.focus();
-    }
+    };
 
     function closeEditModal() {
       editModal.style.display = 'none';
     }
 
-    modalSaveBtn.addEventListener('click', () => {
+    modalSaveBtn.onclick = function() {
       const id = parseInt(modalItemId.value, 10);
       const newQty = modalItemQty.value.trim();
       const newName = modalItemName.value.trim();
@@ -456,7 +456,7 @@
       items = items.map(item => {
         if (item.id === id) {
           const finalName = newName !== '' ? newName : item.name;
-          const finalPrice = !isNaN(newPrice) && newPrice >= 0 ? Number(newPrice.toFixed(2)) : item.estimatedPrice;
+          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : item.estimatedPrice;
           return {
             ...item,
             quantity: newQty,
@@ -471,18 +471,17 @@
       saveItems();
       renderList();
       closeEditModal();
-    });
+    };
 
-    modalCancelBtn.addEventListener('click', closeEditModal);
+    modalCancelBtn.onclick = closeEditModal;
 
-    function toggleCheck(id) {
+    window.toggleCheck = function(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
       saveItems();
       renderList();
-    }
+    };
 
-    // SUPPRESSION AVEC CONFIRMATION
-    function deleteItem(id) {
+    window.deleteItem = function(id) {
       const itemToDelete = items.find(item => item.id === id);
       const itemName = itemToDelete ? itemToDelete.name : "cet article";
       
@@ -491,7 +490,7 @@
         saveItems();
         renderList();
       }
-    }
+    };
 
     function clearAllItems() {
       if (items.length === 0) return;
@@ -533,6 +532,7 @@
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
+    // 6. AFFICHAGE DES ARTICLES
     function renderList() {
       listContainer.innerHTML = '';
       
@@ -567,7 +567,7 @@
             li.innerHTML = `
               <div class="item-left">
                 <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="openEditModal(${item.id})" title="Modifier l'article">✏️</button>
+                <button class="edit-btn" onclick="openEditModal(${item.id})" title="Modifier">✏️</button>
                 ${qtyBadge}
                 ${priceBadge}
                 <span class="item-name">${item.name}</span>
@@ -583,9 +583,9 @@
       });
     }
 
-    // GESTION DU MICROPHONE
+    // 7. GESTION DU MICROPHONE (Code exact V1.0)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'fr-FR';
-      recognitio
+      recognition.continuou
