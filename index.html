@@ -1,12 +1,12 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 2.9 (V2.9)
+  VERSION ACTUELLE : Version 3.0 (V3.0)
   
   HISTORIQUE DES VERSIONS :
-  - V1.0 : Version initiale.
-  - V2.1 : Panneau d'édition unique.
-  - V2.9 : Nettoyage forcé de la mémoire corrompue et déblocage garanti.
+  - V1.0 : Version initiale fonctionnelle.
+  - V2.9 : Socle stable avec nettoyage de mémoire.
+  - V3.0 : Découpage multi-articles ciblé sur le mot de liaison "et" / virgules.
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -14,7 +14,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.9)</title>
+  <title>Ma Liste de Courses - Super U (V3.0)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -192,7 +192,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.9 (V2.9)</div>
+    <div class="version-tag">Version 3.0 (V3.0)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -203,7 +203,7 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 litre de lait et 1 litre de coca..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
@@ -221,28 +221,30 @@
       "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
     ];
 
-    // 2. MOTS-CLÉS
+    // 2. MOTS-CLÉS PAR RAYON
     const CATEGORY_KEYWORDS = {
       "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
       "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
       "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
-      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
+      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "coca zéro", "sirop"],
       "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
       "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
-      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "pain de mie", "biscotte", "croissant", "brioche"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "baguette", "pain de mie", "biscotte", "croissant", "brioche"],
       "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
       "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
       "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
       "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
-      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises", "asperge", "asperges"],
+      "12. Fruits & Légumes Frais": ["pomme", "pommes", "poire", "poires", "banane", "bananes", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "courgettes", "oignon", "oignons", "pomme de terre", "orange", "citron", "fraise", "fraises", "asperge", "asperges"],
       "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
       "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
     };
 
-    // 3. TABLE DES PRIX
+    // 3. TABLE DES PRIX ESTIMATIFS
     const PRICE_DATABASE = {
       "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
+      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
+      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
       "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
       "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
       "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
@@ -251,14 +253,17 @@
       "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
       "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
       "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
+      "asperge": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
+      "asperges": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
       "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
       "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
       "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
       "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
-      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
+      "pain de mie": { defaultPrice: 1.45, pricePerKgOrL: null },
+      "pain": { defaultPrice: 1.10, pricePerKgOrL: null },
+      "coca": { defaultPrice: 1.95, pricePerKgOrL: null },
       "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
@@ -267,7 +272,10 @@
 
     function parseItemText(rawText) {
       let text = (rawText || '').trim();
-      const firstWord = text.split(' ')[0].toLowerCase();
+      text = text.replace(/^(du|de\s+la|des|le|la|les|d')\s+/i, '');
+
+      const words = text.split(' ');
+      const firstWord = words[0] ? words[0].toLowerCase() : '';
       if (NUMBER_WORDS[firstWord] !== undefined) {
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
@@ -308,7 +316,7 @@
       };
     }
 
-    // 4. DONNÉES SÉCURISÉES AVEC PURGE AUTOMATIQUE
+    // 4. DONNÉES SÉCURISÉES
     let items = [];
     try {
       const stored = localStorage.getItem('myShoppingList');
@@ -327,7 +335,6 @@
       }
     } catch (e) {
       items = [];
-      localStorage.removeItem('myShoppingList');
     }
 
     const itemInput = document.getElementById('itemInput');
@@ -354,18 +361,28 @@
       } catch (e) {}
     }
 
+    // AJOUT AVEC DÉCOUPAGE PAR "ET" OU VIRGULE
     function addItem(rawText) {
       if (!rawText || rawText.trim() === '') return;
-      const parsed = parseItemText(rawText);
-      const category = getCategoryForProduct(parsed.name);
 
-      items.push({
-        id: Date.now(),
-        name: parsed.name,
-        quantity: parsed.quantity,
-        estimatedPrice: parsed.estimatedPrice,
-        category: category,
-        checked: false
+      // Découpe simple et sûre
+      const pieces = rawText.split(/\s+et\s+|,|\.|\;/i);
+
+      pieces.forEach(piece => {
+        const cleanPiece = piece.trim();
+        if (cleanPiece !== '') {
+          const parsed = parseItemText(cleanPiece);
+          const category = getCategoryForProduct(parsed.name);
+
+          items.push({
+            id: Date.now() + Math.random(),
+            name: parsed.name,
+            quantity: parsed.quantity,
+            estimatedPrice: parsed.estimatedPrice,
+            category: category,
+            checked: false
+          });
+        }
       });
 
       saveItems();
@@ -454,7 +471,7 @@
       window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
     }
 
-    // 5. AFFICHAGE DES ARTICLES ET DU MESSAGE D'INVITATION
+    // 5. AFFICHAGE DES ARTICLES ET MESSAGE INITIAL
     function renderList() {
       listContainer.innerHTML = '';
       
