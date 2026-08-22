@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U</title>
+  <title>Ma Liste de Courses - Super U (V1)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,11 +13,24 @@
       background-color: #f4f7f6;
       color: #333;
     }
-    h1 {
+    .header-container {
       text-align: center;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0;
       color: #2c3e50;
       font-size: 22px;
-      margin-bottom: 5px;
+    }
+    .version-tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #7f8c8d;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-top: 4px;
+      font-weight: bold;
     }
     .budget-banner {
       background: #27ae60;
@@ -133,6 +146,19 @@
       border-radius: 10px;
       margin-right: 6px;
     }
+    .btn-group {
+      display: flex;
+      gap: 5px;
+    }
+    .edit-btn {
+      background: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
     .delete-btn {
       background: #e74c3c;
       color: white;
@@ -151,7 +177,10 @@
 </head>
 <body>
 
-  <h1>🛒 Ma Liste de Courses</h1>
+  <div class="header-container">
+    <h1>🛒 Ma Liste de Courses</h1>
+    <div class="version-tag">Version 1.0 (V1)</div>
+  </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
 
@@ -308,6 +337,39 @@
       itemInput.value = '';
     }
 
+    // FONCTION D'ÉDITION DU NOM ET DU PRIX
+    function editItem(id) {
+      const itemToEdit = items.find(item => item.id === id);
+      if (!itemToEdit) return;
+
+      const currentName = itemToEdit.name;
+      const newName = prompt("Modifier la désignation :", currentName);
+      if (newName === null) return;
+
+      const currentPrice = itemToEdit.estimatedPrice.toFixed(2);
+      const newPrice = prompt("Modifier le prix (€) :", currentPrice);
+      if (newPrice === null) return;
+
+      const cleanPrice = parseFloat(newPrice.replace(',', '.'));
+
+      items = items.map(item => {
+        if (item.id === id) {
+          const finalName = newName.trim() !== '' ? newName.trim() : item.name;
+          const finalPrice = !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : item.estimatedPrice;
+          return {
+            ...item,
+            name: finalName,
+            category: getCategoryForProduct(finalName),
+            estimatedPrice: finalPrice
+          };
+        }
+        return item;
+      });
+
+      saveItems();
+      renderList();
+    }
+
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
       saveItems();
@@ -398,7 +460,10 @@
                 ${priceBadge}
                 <span class="item-name">${item.name}</span>
               </label>
-              <button class="delete-btn" onclick="deleteItem(${item.id})">✕</button>
+              <div class="btn-group">
+                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
+                <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+              </div>
             `;
             ul.appendChild(li);
           });
@@ -409,6 +474,7 @@
       });
     }
 
+    // GESTION DU MICROPHONE (Version d'origine)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -446,3 +512,4 @@
   </script>
 </body>
 </html>
+ 
