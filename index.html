@@ -187,7 +187,7 @@
   <div id="listContainer"></div>
 
   <script>
-    // 1. ORDRE DES RAYONS
+    // 1. RAYONS
     const CATEGORIES_ORDER = [
       "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
       "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
@@ -216,9 +216,8 @@
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza"]
     };
 
-    // 3. BASE DE DONNÉES ÉLARGIE DES PRIX
+    // 3. BASE TARIFAIRE
     const PRICE_DATABASE = {
-      // Boissons & Liquides
       "eau": { unitPrice: 2.10 },
       "pack eau": { unitPrice: 2.10 },
       "jus": { unitPrice: 1.85, perKiloOrLiter: 1.85 },
@@ -228,8 +227,6 @@
       "bière": { unitPrice: 3.80 },
       "biere": { unitPrice: 3.80 },
       "vin": { unitPrice: 4.50 },
-
-      // Produits laitiers & Crèmerie
       "lait": { unitPrice: 1.10, perKiloOrLiter: 1.10 },
       "beurre": { unitPrice: 2.35, perKiloOrLiter: 9.40 },
       "crème": { unitPrice: 1.40 },
@@ -240,8 +237,6 @@
       "gruyère": { unitPrice: 1.95, perKiloOrLiter: 9.75 },
       "gruyere": { unitPrice: 1.95, perKiloOrLiter: 9.75 },
       "emmental": { unitPrice: 1.90, perKiloOrLiter: 9.50 },
-
-      // Épicerie & Pâtisserie
       "sucre": { unitPrice: 1.45, perKiloOrLiter: 1.45 },
       "farine": { unitPrice: 1.15, perKiloOrLiter: 1.15 },
       "oeuf": { unitPrice: 2.65 },
@@ -257,8 +252,6 @@
       "pain": { unitPrice: 1.10 },
       "baguette": { unitPrice: 1.10 },
       "pain de mie": { unitPrice: 1.45 },
-
-      // Fruits & Légumes
       "tomate": { unitPrice: 2.50, perKiloOrLiter: 2.50 },
       "tomates": { unitPrice: 2.50, perKiloOrLiter: 2.50 },
       "carotte": { unitPrice: 1.70, perKiloOrLiter: 1.70 },
@@ -268,8 +261,6 @@
       "pomme": { unitPrice: 2.40, perKiloOrLiter: 2.40 },
       "banane": { unitPrice: 1.90, perKiloOrLiter: 1.90 },
       "pomme de terre": { unitPrice: 1.80, perKiloOrLiter: 1.80 },
-
-      // Boucherie, Traiteur & Poissonnerie
       "poulet": { unitPrice: 6.50, perKiloOrLiter: 9.80 },
       "steak": { unitPrice: 4.60, perKiloOrLiter: 15.50 },
       "rôti": { unitPrice: 8.50, perKiloOrLiter: 14.00 },
@@ -279,8 +270,6 @@
       "thon": { unitPrice: 2.05 },
       "saumon": { unitPrice: 4.80, perKiloOrLiter: 22.50 },
       "cabillaud": { unitPrice: 5.20, perKiloOrLiter: 19.00 },
-
-      // Entretien & Hygiène
       "sopalin": { unitPrice: 2.50 },
       "essuie-tout": { unitPrice: 2.50 },
       "papier toilette": { unitPrice: 3.40 },
@@ -548,15 +537,27 @@
       });
     }
 
+    // 4. RECONNAISSANCE VOCALE SÉCURISÉE
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
     if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
+      recognition = new SpeechRecognition();
       recognition.lang = 'fr-FR';
       recognition.continuous = false;
       recognition.interimResults = false;
 
       recognition.onstart = () => {
+        isListening = true;
         micBtn.textContent = '🛑 Écoute...';
         micBtn.classList.add('listening');
       };
-      recognition.onresult = (event) => addItem(event.results[0][0].tran
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        addItem(transcript);
+      };
+
+      recognition.onend = () => {
+     
