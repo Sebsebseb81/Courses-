@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.0)</title>
+  <title>Ma Liste de Courses - Super U (V2.1)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -173,46 +173,47 @@
       text-align: center;
       color: #7f8c8d;
       margin-top: 30px;
+      font-size: 14px;
     }
 
-    /* Fenêtre modale de modification */
-    .custom-modal-overlay {
+    /* Panneau d'édition intégré */
+    .edit-overlay {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 9999;
     }
-    .custom-modal-box {
-      background: white;
+    .edit-box {
+      background: #fff;
       padding: 16px;
-      border-radius: 10px;
-      width: 88%;
-      max-width: 380px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      border-radius: 8px;
+      width: 85%;
+      max-width: 360px;
+      box-sizing: border-box;
     }
-    .custom-modal-box h3 {
+    .edit-box h3 {
       margin-top: 0;
-      font-size: 17px;
-      color: #2c3e50;
       margin-bottom: 12px;
+      font-size: 16px;
+      color: #2c3e50;
     }
-    .modal-input-group {
+    .field-group {
       margin-bottom: 10px;
     }
-    .modal-input-group label {
+    .field-group label {
       display: block;
       font-size: 12px;
       font-weight: bold;
       color: #475569;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
-    .modal-input-group input {
+    .field-group input {
       width: 100%;
       padding: 8px;
       font-size: 14px;
@@ -220,26 +221,20 @@
       border-radius: 6px;
       box-sizing: border-box;
     }
-    .modal-btn-row {
+    .modal-actions {
       display: flex;
       gap: 8px;
       margin-top: 14px;
     }
-    .btn-modal-save {
-      flex: 1;
-      background-color: #27ae60;
-    }
-    .btn-modal-cancel {
-      flex: 1;
-      background-color: #94a3b8;
-    }
+    .btn-save { flex: 1; background: #27ae60; }
+    .btn-cancel { flex: 1; background: #94a3b8; }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.0 (V2.0)</div>
+    <div class="version-tag">Version 2.1 (V2.1)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -257,26 +252,26 @@
 
   <div id="listContainer"></div>
 
-  <!-- Boîte modale de modification à 3 champs -->
-  <div class="custom-modal-overlay" id="editModalOverlay">
-    <div class="custom-modal-box">
+  <!-- Panneau modale à trois zones -->
+  <div class="edit-overlay" id="editOverlay">
+    <div class="edit-box">
       <h3>Modifier l'article</h3>
-      <input type="hidden" id="editModalId" />
-      <div class="modal-input-group">
-        <label for="editModalQty">Quantité (facultatif) :</label>
-        <input type="text" id="editModalQty" placeholder="Ex. 1 kg, 2, 500g" />
+      <input type="hidden" id="editId" />
+      <div class="field-group">
+        <label for="inputEditQty">Quantité (facultatif) :</label>
+        <input type="text" id="inputEditQty" placeholder="Ex. 1 kg, 2, 500g" />
       </div>
-      <div class="modal-input-group">
-        <label for="editModalName">Désignation :</label>
-        <input type="text" id="editModalName" placeholder="Ex. Tomates" />
+      <div class="field-group">
+        <label for="inputEditName">Désignation :</label>
+        <input type="text" id="inputEditName" placeholder="Ex. Tomates" />
       </div>
-      <div class="modal-input-group">
-        <label for="editModalPrice">Prix estimé (€) :</label>
-        <input type="number" step="0.01" id="editModalPrice" placeholder="Ex. 2.50" />
+      <div class="field-group">
+        <label for="inputEditPrice">Prix total (€) :</label>
+        <input type="number" step="0.01" id="inputEditPrice" placeholder="Ex. 2.50" />
       </div>
-      <div class="modal-btn-row">
-        <button class="btn-modal-save" id="saveModalBtn">Enregistrer</button>
-        <button class="btn-modal-cancel" id="cancelModalBtn">Annuler</button>
+      <div class="modal-actions">
+        <button class="btn-save" id="btnSaveEdit">Valider</button>
+        <button class="btn-cancel" id="btnCancelEdit">Annuler</button>
       </div>
     </div>
   </div>
@@ -407,14 +402,13 @@
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
 
-    // Éléments de la modale
-    const editModalOverlay = document.getElementById('editModalOverlay');
-    const editModalId = document.getElementById('editModalId');
-    const editModalQty = document.getElementById('editModalQty');
-    const editModalName = document.getElementById('editModalName');
-    const editModalPrice = document.getElementById('editModalPrice');
-    const saveModalBtn = document.getElementById('saveModalBtn');
-    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const editOverlay = document.getElementById('editOverlay');
+    const editId = document.getElementById('editId');
+    const inputEditQty = document.getElementById('inputEditQty');
+    const inputEditName = document.getElementById('inputEditName');
+    const inputEditPrice = document.getElementById('inputEditPrice');
+    const btnSaveEdit = document.getElementById('btnSaveEdit');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
 
     function getCategoryForProduct(name) {
       const cleanName = (name || '').toLowerCase().trim();
@@ -451,28 +445,28 @@
       itemInput.value = '';
     }
 
-    // OUVERTURE DE LA MODALE UNIQUE
-    function openEditModal(id) {
+    // MODIFICATION VIA MODALE À 3 CHAMPS
+    function openEditBox(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      editModalId.value = item.id;
-      editModalQty.value = item.quantity || '';
-      editModalName.value = item.name || '';
-      editModalPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
+      editId.value = item.id;
+      inputEditQty.value = item.quantity || '';
+      inputEditName.value = item.name || '';
+      inputEditPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
 
-      editModalOverlay.style.display = 'flex';
+      editOverlay.style.display = 'flex';
     }
 
-    function closeEditModal() {
-      editModalOverlay.style.display = 'none';
+    function closeEditBox() {
+      editOverlay.style.display = 'none';
     }
 
-    saveModalBtn.addEventListener('click', () => {
-      const id = parseFloat(editModalId.value);
-      const newQty = editModalQty.value.trim();
-      const newName = editModalName.value.trim();
-      const newPrice = parseFloat(editModalPrice.value.replace(',', '.'));
+    btnSaveEdit.addEventListener('click', () => {
+      const id = parseFloat(editId.value);
+      const newQty = inputEditQty.value.trim();
+      const newName = inputEditName.value.trim();
+      const newPrice = parseFloat(inputEditPrice.value.replace(',', '.'));
 
       items = items.map(i => {
         if (i.id === id) {
@@ -491,10 +485,10 @@
 
       saveItems();
       renderList();
-      closeEditModal();
+      closeEditBox();
     });
 
-    cancelModalBtn.addEventListener('click', closeEditModal);
+    btnCancelEdit.addEventListener('click', closeEditBox);
 
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
@@ -552,7 +546,7 @@
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
-    // 6. AFFICHAGE DES ARTICLES
+    // 6. AFFICHAGE DES ARTICLES ET DU MESSAGE D'INVITATION
     function renderList() {
       listContainer.innerHTML = '';
       
@@ -587,4 +581,58 @@
 
             li.innerHTML = `
               <div class="item-left">
-                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
+                <button class="edit-btn" onclick="openEditBox(${item.id})" title="Modifier">✏️</button>
+                ${qtyBadge}
+                ${priceBadge}
+                <span class="item-name">${item.name}</span>
+              </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+            `;
+            ul.appendChild(li);
+          });
+
+          card.appendChild(ul);
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    // 7. GESTION DU MICROPHONE (Code exact V1.8)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        micBtn.textContent = '🛑 Écoute...';
+        micBtn.classList.add('listening');
+      };
+      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
+      recognition.onend = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      recognition.onerror = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      micBtn.addEventListener('click', () => recognition.start());
+    } else {
+      micBtn.disabled = true;
+      micBtn.textContent = '🎤 Non supporté';
+    }
+
+    addBtn.addEventListener('click', () => addItem(itemInput.value));
+    itemInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addItem(itemInput.value);
+    });
+    emailBtn.addEventListener('click', sendByEmail);
+    clearBtn.addEventListener('click', clearAllItems);
+
+    renderList();
+  </script>
+</body>
+</html>
