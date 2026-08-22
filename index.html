@@ -1,9 +1,21 @@
+<!--
+  ===================================================================
+  PROJET : Ma Liste de Courses - Super U
+  VERSION ACTUELLE : Version 2.2 (V2.2)
+  
+  HISTORIQUE DES VERSIONS :
+  - V1.0 : Version initiale (rayons, dictée vocale, prix de base).
+  - V1.8 : Sécurisation du stockage local et message d'accueil.
+  - V2.1 : Panneau d'édition unique avec 3 champs simultanés (✏️).
+  - V2.2 : Découpage automatique multi-articles à la dictée et à la saisie.
+  ===================================================================
+-->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.1)</title>
+  <title>Ma Liste de Courses - Super U (V2.2)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -176,7 +188,7 @@
       font-size: 14px;
     }
 
-    /* Panneau d'édition intégré */
+    /* Panneau d'édition */
     .edit-overlay {
       display: none;
       position: fixed;
@@ -234,7 +246,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.1 (V2.1)</div>
+    <div class="version-tag">Version 2.2 (V2.2)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -245,14 +257,14 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
+    <input type="text" id="itemInput" placeholder="Ex. 3 laits, 4 asperges et du pain de mie..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
   <div id="listContainer"></div>
 
-  <!-- Panneau modale à trois zones -->
+  <!-- Panneau modale d'édition -->
   <div class="edit-overlay" id="editOverlay">
     <div class="edit-box">
       <h3>Modifier l'article</h3>
@@ -295,12 +307,12 @@
       "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
       "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
       "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
-      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain de mie", "biscotte", "croissant", "brioche"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "baguette", "pain de mie", "biscotte", "croissant", "brioche"],
       "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
       "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
       "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
       "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
-      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
+      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises", "asperge", "asperges"],
       "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
       "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
@@ -317,21 +329,38 @@
       "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
       "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
       "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
+      "asperge": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
+      "asperges": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
       "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
       "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
       "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
       "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
+      "pain de mie": { defaultPrice: 1.45, pricePerKgOrL: null },
+      "pain": { defaultPrice: 1.10, pricePerKgOrL: null },
       "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
-    // 4. PARSING DU TEXTE
+    // 4. PARSING ET DÉCOUPAGE MULTI-ARTICLES
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
+
+    function splitMultiItems(rawText) {
+      let text = (rawText || '').trim();
+      // Supprime les formules de politesse ou de commande usuelles
+      text = text.replace(/^(je\s+veux|ajoute|mets|il\s+me\s+faut|rajoute|donne-moi)\s+/i, '');
+
+      // Découpe selon virgule, point-virgule, point, ou mots de liaison (et, puis, ensuite)
+      const segments = text.split(/(?:,|\.|\;|\bet\b|\bpuis\b|\bensuite\b)+/i);
+      return segments.map(s => s.trim()).filter(s => s.length > 0);
+    }
 
     function parseItemText(rawText) {
       let text = (rawText || '').trim();
+      // Nettoyage des petits mots de liaison résiduels en début de segment (ex. "du", "de la", "des", "le", "la")
+      text = text.replace(/^(du|de\s+la|des|le|la|les|d')\s+/i, '');
+
       const firstWord = text.split(' ')[0].toLowerCase();
       if (NUMBER_WORDS[firstWord] !== undefined) {
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
@@ -426,18 +455,24 @@
       } catch (e) {}
     }
 
-    function addItem(rawText) {
+    // AJOUT AVEC DÉCOUPAGE MULTI-SEGMENTS
+    function addItemsFromText(rawText) {
       if (!rawText || rawText.trim() === '') return;
-      const parsed = parseItemText(rawText);
-      const category = getCategoryForProduct(parsed.name);
+      const segments = splitMultiItems(rawText);
 
-      items.push({
-        id: Date.now(),
-        name: parsed.name,
-        quantity: parsed.quantity,
-        estimatedPrice: parsed.estimatedPrice,
-        category: category,
-        checked: false
+      segments.forEach(seg => {
+        const parsed = parseItemText(seg);
+        if (parsed.name) {
+          const category = getCategoryForProduct(parsed.name);
+          items.push({
+            id: Date.now() + Math.random(),
+            name: parsed.name,
+            quantity: parsed.quantity,
+            estimatedPrice: parsed.estimatedPrice,
+            category: category,
+            checked: false
+          });
+        }
       });
 
       saveItems();
@@ -445,7 +480,7 @@
       itemInput.value = '';
     }
 
-    // MODIFICATION VIA MODALE À 3 CHAMPS
+    // MODIFICATION DE L'ARTICLE
     function openEditBox(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
@@ -546,93 +581,6 @@
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
-    // 6. AFFICHAGE DES ARTICLES ET DU MESSAGE D'INVITATION
+    // 6. AFFICHAGE DES ARTICLES
     function renderList() {
-      listContainer.innerHTML = '';
-      
-      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
-      budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
-
-      if (items.length === 0) {
-        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
-        return;
-      }
-
-      CATEGORIES_ORDER.forEach(category => {
-        const categoryItems = items.filter(item => item.category === category);
-
-        if (categoryItems.length > 0) {
-          const card = document.createElement('div');
-          card.className = 'category-card';
-
-          const title = document.createElement('h2');
-          title.className = 'category-title';
-          title.textContent = category;
-          card.appendChild(title);
-
-          const ul = document.createElement('ul');
-          categoryItems.forEach(item => {
-            const li = document.createElement('li');
-            if (item.checked) li.classList.add('checked');
-
-            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
-            const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
-            const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
-
-            li.innerHTML = `
-              <div class="item-left">
-                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="openEditBox(${item.id})" title="Modifier">✏️</button>
-                ${qtyBadge}
-                ${priceBadge}
-                <span class="item-name">${item.name}</span>
-              </div>
-              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
-            `;
-            ul.appendChild(li);
-          });
-
-          card.appendChild(ul);
-          listContainer.appendChild(card);
-        }
-      });
-    }
-
-    // 7. GESTION DU MICROPHONE (Code exact V1.8)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
+      listContainer.inn
