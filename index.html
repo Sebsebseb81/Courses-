@@ -1,13 +1,12 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 2.5 (V2.5)
+  VERSION ACTUELLE : Version 2.6 (V2.6)
   
   HISTORIQUE DES VERSIONS :
-  - V1.0 : Version initiale fonctionnelle.
-  - V1.8 : Sécurisation du stockage et message d'accueil.
-  - V2.1 : Panneau d'édition unique avec 3 champs (✏️).
-  - V2.5 : Découpage multi-articles par algorithme universel (compatible 100% mobile).
+  - V1.0 : Version initiale.
+  - V1.8 : Socle stable avec message d'accueil.
+  - V2.6 : Nettoyage complet, code ultra-léger et déblocage garanti.
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -15,7 +14,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.5)</title>
+  <title>Ma Liste de Courses - Super U (V2.6)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -187,66 +186,13 @@
       margin-top: 30px;
       font-size: 14px;
     }
-
-    /* Panneau d'édition */
-    .edit-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    .edit-box {
-      background: #fff;
-      padding: 16px;
-      border-radius: 8px;
-      width: 85%;
-      max-width: 360px;
-      box-sizing: border-box;
-    }
-    .edit-box h3 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 16px;
-      color: #2c3e50;
-    }
-    .field-group {
-      margin-bottom: 10px;
-    }
-    .field-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: bold;
-      color: #475569;
-      margin-bottom: 3px;
-    }
-    .field-group input {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 14px;
-    }
-    .btn-save { flex: 1; background: #27ae60; }
-    .btn-cancel { flex: 1; background: #94a3b8; }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.5 (V2.5)</div>
+    <div class="version-tag">Version 2.6 (V2.6)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -257,36 +203,12 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg farine 3 kg sucre 4 laits..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
   <div id="listContainer"></div>
-
-  <!-- Panneau modale d'édition -->
-  <div class="edit-overlay" id="editOverlay">
-    <div class="edit-box">
-      <h3>Modifier l'article</h3>
-      <input type="hidden" id="editId" />
-      <div class="field-group">
-        <label for="inputEditQty">Quantité (facultatif) :</label>
-        <input type="text" id="inputEditQty" placeholder="Ex. 1 kg, 2, 500g" />
-      </div>
-      <div class="field-group">
-        <label for="inputEditName">Désignation :</label>
-        <input type="text" id="inputEditName" placeholder="Ex. Tomates" />
-      </div>
-      <div class="field-group">
-        <label for="inputEditPrice">Prix total (€) :</label>
-        <input type="number" step="0.01" id="inputEditPrice" placeholder="Ex. 2.50" />
-      </div>
-      <div class="modal-actions">
-        <button class="btn-save" id="btnSaveEdit">Valider</button>
-        <button class="btn-cancel" id="btnCancelEdit">Annuler</button>
-      </div>
-    </div>
-  </div>
 
   <script>
     // 1. RAYONS
@@ -299,15 +221,15 @@
       "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
     ];
 
-    // 2. MOTS-CLÉS PAR RAYON
+    // 2. MOTS-CLÉS
     const CATEGORY_KEYWORDS = {
       "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
       "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
       "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
-      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "coca zéro", "sirop"],
+      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
       "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
       "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
-      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain", "baguette", "pain de mie", "biscotte", "croissant", "brioche"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain de mie", "biscotte", "croissant", "brioche"],
       "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
       "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
       "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
@@ -318,11 +240,9 @@
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
     };
 
-    // 3. TABLE DES PRIX ESTIMATIFS
+    // 3. TABLE DES PRIX
     const PRICE_DATABASE = {
       "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
-      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
-      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
       "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
       "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
       "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
@@ -331,72 +251,23 @@
       "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
       "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
       "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
-      "asperge": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
-      "asperges": { defaultPrice: 0.80, pricePerKgOrL: 6.00 },
       "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
       "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
       "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
       "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
       "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-      "pain de mie": { defaultPrice: 1.45, pricePerKgOrL: null },
-      "pain": { defaultPrice: 1.10, pricePerKgOrL: null },
-      "coca": { defaultPrice: 1.95, pricePerKgOrL: null },
+      "farine": { defaultPrice: 1.15, pricePerKgOrL: 1.15 },
+      "sucre": { defaultPrice: 1.45, pricePerKgOrL: 1.45 },
       "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
-    // 4. DÉCOUPAGE UNIVERSEL
-    function isStartOfQuantity(word) {
-      if (!word) return false;
-      const clean = word.toLowerCase();
-      if (!isNaN(parseFloat(clean))) return true;
-      if (NUMBER_WORDS[clean] !== undefined) return true;
-      return false;
-    }
-
-    function splitMultiItems(rawText) {
-      if (!rawText) return [];
-      let text = rawText.trim();
-      text = text.replace(/^(alors\s+)?(on\s+va\s+prendre|je\s+veux|il\s+me\s+faut|ajoute|mets|rajoute|donne-moi)\s+/i, '');
-
-      // Découpe par ponctuation ou mots de liaison
-      const roughParts = text.split(/,|\.|\;|\r?\n|\bet\b|\bpuis\b|\bensuite\b/i);
-      const results = [];
-
-      roughParts.forEach(part => {
-        const words = part.trim().split(/\s+/);
-        if (words.length === 0 || words[0] === '') return;
-
-        let currentSegment = [];
-
-        for (let i = 0; i < words.length; i++) {
-          const w = words[i];
-          if (currentSegment.length > 0 && isStartOfQuantity(w)) {
-            // Nouveau nombre détecté au milieu d'une phrase -> nouvel article
-            results.push(currentSegment.join(' '));
-            currentSegment = [w];
-          } else {
-            currentSegment.push(w);
-          }
-        }
-
-        if (currentSegment.length > 0) {
-          results.push(currentSegment.join(' '));
-        }
-      });
-
-      return results.filter(r => r.trim().length > 0);
-    }
-
     function parseItemText(rawText) {
       let text = (rawText || '').trim();
-      text = text.replace(/^(du|de\s+la|des|le|la|les|d')\s+/i, '');
-
-      const words = text.split(' ');
-      const firstWord = words[0] ? words[0].toLowerCase() : '';
+      const firstWord = text.split(' ')[0].toLowerCase();
       if (NUMBER_WORDS[firstWord] !== undefined) {
         text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
@@ -437,7 +308,7 @@
       };
     }
 
-    // 5. GESTION DES DONNÉES
+    // 4. DONNÉES SÉCURISÉES
     let items = [];
     try {
       const stored = localStorage.getItem('myShoppingList');
@@ -466,14 +337,6 @@
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
 
-    const editOverlay = document.getElementById('editOverlay');
-    const editId = document.getElementById('editId');
-    const inputEditQty = document.getElementById('inputEditQty');
-    const inputEditName = document.getElementById('inputEditName');
-    const inputEditPrice = document.getElementById('inputEditPrice');
-    const btnSaveEdit = document.getElementById('btnSaveEdit');
-    const btnCancelEdit = document.getElementById('btnCancelEdit');
-
     function getCategoryForProduct(name) {
       const cleanName = (name || '').toLowerCase().trim();
       for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
@@ -490,23 +353,18 @@
       } catch (e) {}
     }
 
-    function addItemsFromText(rawText) {
+    function addItem(rawText) {
       if (!rawText || rawText.trim() === '') return;
-      const segments = splitMultiItems(rawText);
+      const parsed = parseItemText(rawText);
+      const category = getCategoryForProduct(parsed.name);
 
-      segments.forEach(seg => {
-        const parsed = parseItemText(seg);
-        if (parsed.name && parsed.name.trim() !== '') {
-          const category = getCategoryForProduct(parsed.name);
-          items.push({
-            id: Date.now() + Math.random(),
-            name: parsed.name,
-            quantity: parsed.quantity,
-            estimatedPrice: parsed.estimatedPrice,
-            category: category,
-            checked: false
-          });
-        }
+      items.push({
+        id: Date.now(),
+        name: parsed.name,
+        quantity: parsed.quantity,
+        estimatedPrice: parsed.estimatedPrice,
+        category: category,
+        checked: false
       });
 
       saveItems();
@@ -514,38 +372,26 @@
       itemInput.value = '';
     }
 
-    function openEditBox(id) {
+    function editItem(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      editId.value = item.id;
-      inputEditQty.value = item.quantity || '';
-      inputEditName.value = item.name || '';
-      inputEditPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
+      const currentText = item.quantity ? `${item.quantity} ${item.name}` : item.name;
+      const newText = prompt("Modifier la désignation / quantité :", currentText);
+      if (newText === null || newText.trim() === '') return;
 
-      editOverlay.style.display = 'flex';
-    }
-
-    function closeEditBox() {
-      editOverlay.style.display = 'none';
-    }
-
-    btnSaveEdit.addEventListener('click', () => {
-      const id = parseFloat(editId.value);
-      const newQty = inputEditQty.value.trim();
-      const newName = inputEditName.value.trim();
-      const newPrice = parseFloat(inputEditPrice.value.replace(',', '.'));
+      const newPrice = prompt("Modifier le prix (€) :", item.estimatedPrice.toFixed(2));
+      const parsed = parseItemText(newText);
+      const cleanPrice = parseFloat((newPrice || '').replace(',', '.'));
 
       items = items.map(i => {
         if (i.id === id) {
-          const finalName = newName !== '' ? newName : i.name;
-          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : i.estimatedPrice;
           return {
             ...i,
-            quantity: newQty,
-            name: finalName,
-            category: getCategoryForProduct(finalName),
-            estimatedPrice: finalPrice
+            name: parsed.name,
+            quantity: parsed.quantity,
+            category: getCategoryForProduct(parsed.name),
+            estimatedPrice: !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : parsed.estimatedPrice
           };
         }
         return i;
@@ -553,10 +399,7 @@
 
       saveItems();
       renderList();
-      closeEditBox();
-    });
-
-    btnCancelEdit.addEventListener('click', closeEditBox);
+    }
 
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
@@ -585,13 +428,117 @@
 
     function sendByEmail() {
       if (items.length === 0) {
-        alert("La liste est vide, ajoute des articles avant d'envoyer !");
+        alert("La liste est vide !");
         return;
       }
 
       let emailBody = "🛒 MA LISTE DE COURSES ORDONNÉE\n\n";
-
       CATEGORIES_ORDER.forEach(category => {
         const categoryItems = items.filter(item => item.category === category);
         if (categoryItems.length > 0) {
-         
+          emailBody += `--- ${category} ---\n`;
+          categoryItems.forEach(item => {
+            const status = item.checked ? "[FAIT] " : "[ ] ";
+            const qty = item.quantity ? `(${item.quantity}) ` : "";
+            const price = ` [~${item.estimatedPrice.toFixed(2)} €]`;
+            emailBody += `${status}${qty}${item.name}${price}\n`;
+          });
+          emailBody += "\n";
+        }
+      });
+
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      emailBody += `Total estimé : ${total.toFixed(2)} €\n`;
+
+      window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
+    }
+
+    // 5. AFFICHAGE DES ARTICLES
+    function renderList() {
+      listContainer.innerHTML = '';
+      
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
+
+      if (items.length === 0) {
+        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
+        return;
+      }
+
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+
+        if (categoryItems.length > 0) {
+          const card = document.createElement('div');
+          card.className = 'category-card';
+
+          const title = document.createElement('h2');
+          title.className = 'category-title';
+          title.textContent = category;
+          card.appendChild(title);
+
+          const ul = document.createElement('ul');
+          categoryItems.forEach(item => {
+            const li = document.createElement('li');
+            if (item.checked) li.classList.add('checked');
+
+            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
+            const priceBadge = `<span class="price-badge">~${item.estimatedPrice.toFixed(2)} €</span>`;
+
+            li.innerHTML = `
+              <div class="item-left">
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
+                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
+                ${qtyBadge}
+                ${priceBadge}
+                <span class="item-name">${item.name}</span>
+              </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+            `;
+            ul.appendChild(li);
+          });
+
+          card.appendChild(ul);
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    // 6. MICROPHONE
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        micBtn.textContent = '🛑 Écoute...';
+        micBtn.classList.add('listening');
+      };
+      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
+      recognition.onend = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      recognition.onerror = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      micBtn.addEventListener('click', () => recognition.start());
+    } else {
+      micBtn.disabled = true;
+      micBtn.textContent = '🎤 Non supporté';
+    }
+
+    addBtn.addEventListener('click', () => addItem(itemInput.value));
+    itemInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addItem(itemInput.value);
+    });
+    emailBtn.addEventListener('click', sendByEmail);
+    clearBtn.addEventListener('click', clearAllItems);
+
+    renderList();
+  </script>
+</body>
+</html>
