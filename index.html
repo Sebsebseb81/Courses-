@@ -135,9 +135,6 @@
       cursor: pointer;
       user-select: none;
     }
-    .price-badge:hover {
-      background-color: #117a65;
-    }
     .btn-group {
       display: flex;
       gap: 5px;
@@ -187,7 +184,7 @@
   <div id="listContainer"></div>
 
   <script>
-    // 1. RAYONS
+    // 1. RAYONS DANS L'ORDRE
     const CATEGORIES_ORDER = [
       "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
       "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
@@ -197,7 +194,7 @@
       "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
     ];
 
-    // 2. MOTS-CLÉS PAR RAYON
+    // 2. MOTS-CLÉS DE CLASSEMENT
     const CATEGORY_KEYWORDS = {
       "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
       "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
@@ -216,7 +213,7 @@
       "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza"]
     };
 
-    // 3. BASE TARIFAIRE
+    // 3. BASE DE DONNÉES DES PRIX
     const PRICE_DATABASE = {
       "eau": { unitPrice: 2.10 },
       "pack eau": { unitPrice: 2.10 },
@@ -537,27 +534,29 @@
       });
     }
 
-    // 4. RECONNAISSANCE VOCALE SÉCURISÉE
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let isListening = false;
+    // 4. GESTION DIRECTE DU MICROPHONE
+    let currentRecognition = null;
 
-    if (SpeechRecognition) {
-      recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    micBtn.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      recognition.onstart = () => {
-        isListening = true;
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
+      if (!SpeechRecognition) {
+        alert("La reconnaissance vocale n'est pas supportée par ce navigateur.");
+        return;
+      }
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        addItem(transcript);
-      };
+      if (currentRecognition) {
+        currentRecognition.stop();
+        currentRecognition = null;
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+        return;
+      }
 
-      recognition.onend = () => {
-     
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+   
