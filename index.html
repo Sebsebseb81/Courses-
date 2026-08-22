@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1.8)</title>
+  <title>Ma Liste de Courses - Super U (V1.9)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -71,6 +71,7 @@
       font-size: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     button {
       padding: 10px 14px;
@@ -173,13 +174,64 @@
       color: #7f8c8d;
       margin-top: 30px;
     }
+
+    /* Boîte modale native */
+    dialog {
+      border: none;
+      border-radius: 10px;
+      padding: 18px;
+      width: 88%;
+      max-width: 380px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      background-color: #fff;
+    }
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+    }
+    dialog h3 {
+      margin-top: 0;
+      font-size: 17px;
+      color: #2c3e50;
+      margin-bottom: 14px;
+    }
+    .dialog-field {
+      margin-bottom: 12px;
+    }
+    .dialog-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+    .dialog-field input {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .dialog-btn-save {
+      flex: 1;
+      background-color: #27ae60;
+    }
+    .dialog-btn-cancel {
+      flex: 1;
+      background-color: #94a3b8;
+    }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.8 (V1.8)</div>
+    <div class="version-tag">Version 1.9 (V1.9)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -196,6 +248,28 @@
   </div>
 
   <div id="listContainer"></div>
+
+  <!-- Boîte de dialogue pour modifier en un seul écran -->
+  <dialog id="editDialog">
+    <h3>Modifier l'article</h3>
+    <input type="hidden" id="dialogItemId" />
+    <div class="dialog-field">
+      <label for="dialogItemQty">Quantité (facultatif) :</label>
+      <input type="text" id="dialogItemQty" placeholder="Ex. 1 kg, 2, 500g" />
+    </div>
+    <div class="dialog-field">
+      <label for="dialogItemName">Désignation de l'article :</label>
+      <input type="text" id="dialogItemName" placeholder="Ex. Tomates" />
+    </div>
+    <div class="dialog-field">
+      <label for="dialogItemPrice">Prix estimé (€) :</label>
+      <input type="number" step="0.01" id="dialogItemPrice" placeholder="Ex. 2.50" />
+    </div>
+    <div class="dialog-actions">
+      <button class="dialog-btn-save" id="dialogSaveBtn">Enregistrer</button>
+      <button class="dialog-btn-cancel" id="dialogCancelBtn">Annuler</button>
+    </div>
+  </dialog>
 
   <script>
     // 1. RAYONS
@@ -248,7 +322,7 @@
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
-    // 4. PARSING QUANTITÉ ET PRIX
+    // 4. ANALYSE DU TEXTE
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
     function parseItemText(rawText) {
@@ -294,7 +368,7 @@
       };
     }
 
-    // 5. GESTION DES DONNÉES SÉCURISÉE
+    // 5. GESTION DES DONNÉES
     let items = [];
     try {
       const stored = localStorage.getItem('myShoppingList');
@@ -322,6 +396,15 @@
     const clearBtn = document.getElementById('clearBtn');
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
+
+    // Éléments du dialogue
+    const editDialog = document.getElementById('editDialog');
+    const dialogItemId = document.getElementById('dialogItemId');
+    const dialogItemQty = document.getElementById('dialogItemQty');
+    const dialogItemName = document.getElementById('dialogItemName');
+    const dialogItemPrice = document.getElementById('dialogItemPrice');
+    const dialogSaveBtn = document.getElementById('dialogSaveBtn');
+    const dialogCancelBtn = document.getElementById('dialogCancelBtn');
 
     function getCategoryForProduct(name) {
       const cleanName = (name || '').toLowerCase().trim();
@@ -358,31 +441,39 @@
       itemInput.value = '';
     }
 
-    function editItem(id) {
+    // OUVERTURE DE LA BOÎTE UNIQUE
+    function openEditDialog(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      const newQty = prompt("1/3 - Quantité (ex. 1 kg, 2, 500g) :", item.quantity || "");
-      if (newQty === null) return;
+      dialogItemId.value = item.id;
+      dialogItemQty.value = item.quantity || '';
+      dialogItemName.value = item.name || '';
+      dialogItemPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
 
-      const newName = prompt("2/3 - Nom de l'article :", item.name);
-      if (newName === null) return;
+      editDialog.showModal();
+    }
 
-      const currentPrice = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
-      const newPrice = prompt("3/3 - Prix (€) :", currentPrice);
-      if (newPrice === null) return;
+    dialogCancelBtn.addEventListener('click', () => {
+      editDialog.close();
+    });
 
-      const cleanPrice = parseFloat(newPrice.replace(',', '.'));
-      const finalName = newName.trim() !== '' ? newName.trim() : item.name;
+    dialogSaveBtn.addEventListener('click', () => {
+      const id = parseFloat(dialogItemId.value);
+      const newQty = dialogItemQty.value.trim();
+      const newName = dialogItemName.value.trim();
+      const newPrice = parseFloat(dialogItemPrice.value.replace(',', '.'));
 
       items = items.map(i => {
         if (i.id === id) {
+          const finalName = newName !== '' ? newName : i.name;
+          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : i.estimatedPrice;
           return {
             ...i,
-            quantity: newQty.trim(),
+            quantity: newQty,
             name: finalName,
             category: getCategoryForProduct(finalName),
-            estimatedPrice: !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : i.estimatedPrice
+            estimatedPrice: finalPrice
           };
         }
         return i;
@@ -390,7 +481,8 @@
 
       saveItems();
       renderList();
-    }
+      editDialog.close();
+    });
 
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
@@ -484,57 +576,9 @@
             li.innerHTML = `
               <div class="item-left">
                 <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
+                <button class="edit-btn" onclick="openEditDialog(${item.id})" title="Modifier">✏️</button>
                 ${qtyBadge}
                 ${priceBadge}
                 <span class="item-name">${item.name}</span>
               </div>
-              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
-            `;
-            ul.appendChild(li);
-          });
-
-          card.appendChild(ul);
-          listContainer.appendChild(card);
-        }
-      });
-    }
-
-    // 7. GESTION DU MICROPHONE (Code exact V1.0)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer
