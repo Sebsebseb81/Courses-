@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1.7)</title>
+  <title>Ma Liste de Courses - Super U (V1.8)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -65,13 +65,12 @@
       gap: 8px;
       margin-bottom: 15px;
     }
-    .input-main {
+    input[type="text"] {
       flex: 1;
       padding: 12px;
       font-size: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
-      box-sizing: border-box;
     }
     button {
       padding: 10px 14px;
@@ -174,66 +173,13 @@
       color: #7f8c8d;
       margin-top: 30px;
     }
-
-    /* Fenêtre modale */
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.45);
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 16px;
-      border-radius: 8px;
-      width: 85%;
-      max-width: 360px;
-      box-sizing: border-box;
-    }
-    .modal-content h3 {
-      margin-top: 0;
-      font-size: 16px;
-      color: #2c3e50;
-      margin-bottom: 12px;
-    }
-    .modal-group {
-      margin-bottom: 8px;
-    }
-    .modal-group label {
-      display: block;
-      font-size: 11px;
-      font-weight: bold;
-      color: #475569;
-      margin-bottom: 3px;
-    }
-    .modal-group input {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 14px;
-    }
-    .btn-save { flex: 1; background: #27ae60; }
-    .btn-cancel { flex: 1; background: #94a3b8; }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.7 (V1.7)</div>
+    <div class="version-tag">Version 1.8 (V1.8)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -244,339 +190,351 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" class="input-main" placeholder="Ex. 1 kg de tomates, 2 laits, thon..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
   <div id="listContainer"></div>
 
-  <!-- Modale d'édition -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal-content">
-      <h3>Modifier l'article</h3>
-      <input type="hidden" id="editId" />
-      <div class="modal-group">
-        <label for="editQty">Quantité (ex. 1 kg, 2, 500g) :</label>
-        <input type="text" id="editQty" />
-      </div>
-      <div class="modal-group">
-        <label for="editName">Désignation :</label>
-        <input type="text" id="editName" />
-      </div>
-      <div class="modal-group">
-        <label for="editPrice">Prix total (€) :</label>
-        <input type="number" step="0.01" id="editPrice" />
-      </div>
-      <div class="modal-actions">
-        <button class="btn-save" id="btnModalSave">Valider</button>
-        <button class="btn-cancel" id="btnModalCancel">Annuler</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // 1. RAYONS
-      const CATEGORIES_ORDER = [
-        "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
-        "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
-        "7. Petit-Déjeuner, Pains & Gâteaux", "8. Ingrédients Pâtisserie & Cuisine",
-        "9. Entretien de la Maison & Linge", "10. Frais Emballé & Traiteur",
-        "11. Volaille, Boucherie & Fromage à la coupe", "12. Fruits & Légumes Frais",
-        "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
-      ];
+    // 1. RAYONS
+    const CATEGORIES_ORDER = [
+      "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
+      "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
+      "7. Petit-Déjeuner, Pains & Gâteaux", "8. Ingrédients Pâtisserie & Cuisine",
+      "9. Entretien de la Maison & Linge", "10. Frais Emballé & Traiteur",
+      "11. Volaille, Boucherie & Fromage à la coupe", "12. Fruits & Légumes Frais",
+      "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"
+    ];
 
-      // 2. MOTS-CLÉS
-      const CATEGORY_KEYWORDS = {
-        "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
-        "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
-        "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
-        "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
-        "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
-        "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
-        "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain de mie", "biscotte", "croissant", "brioche"],
-        "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
-        "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
-        "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
-        "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
-        "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
-        "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
-        "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
-        "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
-      };
+    // 2. MOTS-CLÉS PAR RAYON
+    const CATEGORY_KEYWORDS = {
+      "1. Librairie & Culture": ["livre", "revue", "magazine", "journal", "bd", "roman", "stylo", "cahier"],
+      "2. Bazar & Maison": ["pile", "ampoule", "bricolage", "jardin", "vaisselle", "gadget", "ampoules", "piles"],
+      "3. Papier & Essuie-tout": ["essuie-tout", "essuie tout", "sopalin", "papier toilette", "papier wc", "mouchoir", "mouchoirs"],
+      "4. Boissons & Apéritif": ["vin", "bière", "biere", "chips", "gâteau apéro", "gateau apero", "cacahuète", "eau", "soda", "jus", "coca", "sirop"],
+      "5. Hygiène & Beauté": ["shampoing", "gel douche", "savon", "dentifrice", "brosse à dents", "crème visage", "déodorant", "coton"],
+      "6. Épicerie Salée & Huiles": ["conserve", "sauce", "sauce tomate", "pâte", "pâtes", "riz", "huile", "vinaigre", "moutarde", "mayonnaise", "sel", "poivre"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["café", "cafe", "thé", "the", "céréales", "cereales", "gâteau", "gateau", "biscuit", "pain de mie", "biscotte", "croissant", "brioche"],
+      "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "farine", "oeuf", "oeufs", "levure", "chocolat", "vanille"],
+      "9. Entretien de la Maison & Linge": ["lessive", "adoucissant", "produit sol", "nettoyant", "liquide vaisselle", "éponge", "eponge", "sac poubelle", "eau de javel"],
+      "10. Frais Emballé & Traiteur": ["pâte fraîche", "pates fraiches", "jambon", "pâte à pizza", "lardons", "lardon", "traiteur chinois", "nems"],
+      "11. Volaille, Boucherie & Fromage à la coupe": ["poulet", "dinde", "boucherie", "steak", "viande", "boeuf", "porc", "rôti", "roti", "charcuterie coupe", "fromage coupe"],
+      "12. Fruits & Légumes Frais": ["pomme", "poire", "banane", "tomate", "tomates", "salade", "carotte", "carottes", "courgette", "oignon", "pomme de terre", "orange", "citron", "fraise", "fraises"],
+      "13. Poissonnerie": ["poisson", "saumon", "cabillaud", "crevette", "crevettes", "moule", "dorade", "thon"],
+      "14. Crèmerie & Produits Laitiers": ["lait", "crème liquide", "creme liquide", "crème fraîche", "yaourt", "beurre", "fromage", "reblochon", "gruyère", "gruyere", "emmental"],
+      "15. Surgelés": ["surgelé", "surgele", "glace", "frites", "pizza surgelée"]
+    };
 
-      // 3. TABLE DES PRIX
-      const PRICE_DATABASE = {
-        "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
-        "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
-        "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
-        "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
-        "reblochon": { defaultPrice: 4.80, pricePerKgOrL: 10.50 },
-        "gruyère": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
-        "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
-        "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
-        "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
-        "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
-        "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
-        "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
-        "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
-        "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-        "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
-        "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
-        "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
-      };
+    // 3. TABLE DES PRIX ESTIMATIFS
+    const PRICE_DATABASE = {
+      "lait": { defaultPrice: 1.10, pricePerKgOrL: 1.10 },
+      "oeuf": { defaultPrice: 2.50, pricePerKgOrL: null },
+      "oeufs": { defaultPrice: 2.50, pricePerKgOrL: null },
+      "beurre": { defaultPrice: 2.30, pricePerKgOrL: 9.20 },
+      "reblochon": { defaultPrice: 4.80, pricePerKgOrL: 10.50 },
+      "gruyère": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
+      "gruyere": { defaultPrice: 1.80, pricePerKgOrL: 9.00 },
+      "tomate": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
+      "tomates": { defaultPrice: 2.50, pricePerKgOrL: 2.50 },
+      "carotte": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
+      "carottes": { defaultPrice: 1.80, pricePerKgOrL: 1.80 },
+      "poulet": { defaultPrice: 5.50, pricePerKgOrL: 9.50 },
+      "steak": { defaultPrice: 4.50, pricePerKgOrL: 15.00 },
+      "pâte": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
+      "pâtes": { defaultPrice: 1.20, pricePerKgOrL: 1.20 },
+      "lessive": { defaultPrice: 7.50, pricePerKgOrL: null },
+      "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
+    };
 
-      const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
+    // 4. PARSING QUANTITÉ ET PRIX
+    const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
-      function parseItemText(rawText) {
-        let text = (rawText || '').trim();
-        const firstWord = text.split(' ')[0].toLowerCase();
-        if (NUMBER_WORDS[firstWord] !== undefined) {
-          text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
-        }
-
-        const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|grammes?|l|litres?|boîtes?|boites?|paquets?|bouteilles?|pots?|tranches?|sacs?)?\s*(?:d'|de\s+)?(.*)$/i;
-        const match = text.match(regex);
-
-        let val = 1;
-        let unit = '';
-        let name = text;
-
-        if (match) {
-          val = parseFloat(match[1].replace(',', '.'));
-          unit = match[2] ? match[2].toLowerCase() : '';
-          name = match[3].trim();
-        }
-
-        let estimatedPrice = 2.50;
-        const cleanName = name.toLowerCase();
-
-        for (const [key, data] of Object.entries(PRICE_DATABASE)) {
-          if (cleanName.includes(key)) {
-            if ((unit.startsWith('k') || unit.startsWith('l')) && data.pricePerKgOrL) {
-              estimatedPrice = data.pricePerKgOrL * val;
-            } else if (unit.startsWith('g') && data.pricePerKgOrL) {
-              estimatedPrice = data.pricePerKgOrL * (val / 1000);
-            } else {
-              estimatedPrice = data.defaultPrice * val;
-            }
-            break;
-          }
-        }
-
-        return {
-          quantity: match ? (unit ? `${val} ${unit}` : `${val}`) : '',
-          name: name,
-          estimatedPrice: Number(estimatedPrice.toFixed(2))
-        };
+    function parseItemText(rawText) {
+      let text = (rawText || '').trim();
+      const firstWord = text.split(' ')[0].toLowerCase();
+      if (NUMBER_WORDS[firstWord] !== undefined) {
+        text = text.replace(new RegExp('^' + firstWord, 'i'), NUMBER_WORDS[firstWord]);
       }
 
-      // DONNÉES
-      let items = [];
-      try {
-        const stored = JSON.parse(localStorage.getItem('myShoppingList'));
-        if (Array.isArray(stored)) {
-          items = stored.map(i => ({
+      const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|grammes?|l|litres?|boîtes?|boites?|paquets?|bouteilles?|pots?|tranches?|sacs?)?\s*(?:d'|de\s+)?(.*)$/i;
+      const match = text.match(regex);
+
+      let val = 1;
+      let unit = '';
+      let name = text;
+
+      if (match) {
+        val = parseFloat(match[1].replace(',', '.'));
+        unit = match[2] ? match[2].toLowerCase() : '';
+        name = match[3].trim();
+      }
+
+      let estimatedPrice = 2.50;
+      const cleanName = name.toLowerCase();
+
+      for (const [key, data] of Object.entries(PRICE_DATABASE)) {
+        if (cleanName.includes(key)) {
+          if ((unit.startsWith('k') || unit.startsWith('l')) && data.pricePerKgOrL) {
+            estimatedPrice = data.pricePerKgOrL * val;
+          } else if (unit.startsWith('g') && data.pricePerKgOrL) {
+            estimatedPrice = data.pricePerKgOrL * (val / 1000);
+          } else {
+            estimatedPrice = data.defaultPrice * val;
+          }
+          break;
+        }
+      }
+
+      return {
+        quantity: match ? (unit ? `${val} ${unit}` : `${val}`) : '',
+        name: name,
+        estimatedPrice: Number(estimatedPrice.toFixed(2))
+      };
+    }
+
+    // 5. GESTION DES DONNÉES SÉCURISÉE
+    let items = [];
+    try {
+      const stored = localStorage.getItem('myShoppingList');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          items = parsed.map(i => ({
             id: i.id || Date.now() + Math.random(),
             name: i.name || 'Article',
             quantity: i.quantity || '',
-            estimatedPrice: (typeof i.estimatedPrice === 'number') ? i.estimatedPrice : (typeof i.price === 'number' ? i.price : 2.50),
+            estimatedPrice: typeof i.estimatedPrice === 'number' ? i.estimatedPrice : 2.50,
             category: i.category || 'Divers / Non classé',
             checked: !!i.checked
           }));
         }
-      } catch (e) {
-        items = [];
       }
+    } catch (e) {
+      items = [];
+    }
 
-      const itemInput = document.getElementById('itemInput');
-      const addBtn = document.getElementById('addBtn');
-      const micBtn = document.getElementById('micBtn');
-      const emailBtn = document.getElementById('emailBtn');
-      const clearBtn = document.getElementById('clearBtn');
-      const listContainer = document.getElementById('listContainer');
-      const budgetDisplay = document.getElementById('budgetDisplay');
+    const itemInput = document.getElementById('itemInput');
+    const addBtn = document.getElementById('addBtn');
+    const micBtn = document.getElementById('micBtn');
+    const emailBtn = document.getElementById('emailBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const listContainer = document.getElementById('listContainer');
+    const budgetDisplay = document.getElementById('budgetDisplay');
 
-      const modalBackdrop = document.getElementById('modalBackdrop');
-      const editId = document.getElementById('editId');
-      const editQty = document.getElementById('editQty');
-      const editName = document.getElementById('editName');
-      const editPrice = document.getElementById('editPrice');
-      const btnModalSave = document.getElementById('btnModalSave');
-      const btnModalCancel = document.getElementById('btnModalCancel');
-
-      function getCategoryForProduct(name) {
-        const cleanName = (name || '').toLowerCase().trim();
-        for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-          for (const keyword of keywords) {
-            if (cleanName.includes(keyword)) return category;
-          }
+    function getCategoryForProduct(name) {
+      const cleanName = (name || '').toLowerCase().trim();
+      for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+        for (const keyword of keywords) {
+          if (cleanName.includes(keyword)) return category;
         }
-        return "Divers / Non classé";
       }
+      return "Divers / Non classé";
+    }
 
-      function saveItems() {
+    function saveItems() {
+      try {
         localStorage.setItem('myShoppingList', JSON.stringify(items));
-      }
+      } catch (e) {}
+    }
 
-      function addItem(rawText) {
-        if (!rawText || rawText.trim() === '') return;
-        const parsed = parseItemText(rawText);
-        const category = getCategoryForProduct(parsed.name);
+    function addItem(rawText) {
+      if (!rawText || rawText.trim() === '') return;
+      const parsed = parseItemText(rawText);
+      const category = getCategoryForProduct(parsed.name);
 
-        items.push({
-          id: Date.now(),
-          name: parsed.name,
-          quantity: parsed.quantity,
-          estimatedPrice: parsed.estimatedPrice,
-          category: category,
-          checked: false
-        });
-
-        saveItems();
-        renderList();
-        itemInput.value = '';
-      }
-
-      function handleAdd() {
-        addItem(itemInput.value);
-      }
-
-      // MODALE
-      function openModal(id) {
-        const item = items.find(i => i.id === id);
-        if (!item) return;
-
-        editId.value = item.id;
-        editQty.value = item.quantity || '';
-        editName.value = item.name || '';
-        editPrice.value = Number(item.estimatedPrice || 2.50).toFixed(2);
-
-        modalBackdrop.style.display = 'flex';
-      }
-
-      function closeModal() {
-        modalBackdrop.style.display = 'none';
-      }
-
-      btnModalSave.addEventListener('click', () => {
-        const id = parseFloat(editId.value);
-        const newQty = editQty.value.trim();
-        const newName = editName.value.trim();
-        const newPrice = parseFloat(editPrice.value.replace(',', '.'));
-
-        items = items.map(i => {
-          if (i.id === id) {
-            const finalName = newName !== '' ? newName : i.name;
-            const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : i.estimatedPrice;
-            return {
-              ...i,
-              quantity: newQty,
-              name: finalName,
-              category: getCategoryForProduct(finalName),
-              estimatedPrice: finalPrice
-            };
-          }
-          return i;
-        });
-
-        saveItems();
-        renderList();
-        closeModal();
+      items.push({
+        id: Date.now(),
+        name: parsed.name,
+        quantity: parsed.quantity,
+        estimatedPrice: parsed.estimatedPrice,
+        category: category,
+        checked: false
       });
 
-      btnModalCancel.addEventListener('click', closeModal);
+      saveItems();
+      renderList();
+      itemInput.value = '';
+    }
 
-      // RENDU
-      function renderList() {
-        listContainer.innerHTML = '';
+    function editItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
 
-        const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
-        budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
+      const newQty = prompt("1/3 - Quantité (ex. 1 kg, 2, 500g) :", item.quantity || "");
+      if (newQty === null) return;
 
-        if (items.length === 0) {
-          listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Saisis ou dicte un article !</p>';
-          return;
+      const newName = prompt("2/3 - Nom de l'article :", item.name);
+      if (newName === null) return;
+
+      const currentPrice = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
+      const newPrice = prompt("3/3 - Prix (€) :", currentPrice);
+      if (newPrice === null) return;
+
+      const cleanPrice = parseFloat(newPrice.replace(',', '.'));
+      const finalName = newName.trim() !== '' ? newName.trim() : item.name;
+
+      items = items.map(i => {
+        if (i.id === id) {
+          return {
+            ...i,
+            quantity: newQty.trim(),
+            name: finalName,
+            category: getCategoryForProduct(finalName),
+            estimatedPrice: !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : i.estimatedPrice
+          };
         }
-
-        CATEGORIES_ORDER.forEach(category => {
-          const categoryItems = items.filter(item => item.category === category);
-
-          if (categoryItems.length > 0) {
-            const card = document.createElement('div');
-            card.className = 'category-card';
-
-            const title = document.createElement('h2');
-            title.className = 'category-title';
-            title.textContent = category;
-            card.appendChild(title);
-
-            const ul = document.createElement('ul');
-            categoryItems.forEach(item => {
-              const li = document.createElement('li');
-              if (item.checked) li.classList.add('checked');
-
-              const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
-              const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
-              const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
-
-              li.innerHTML = `
-                <div class="item-left">
-                  <input type="checkbox" class="item-chk" data-id="${item.id}" ${item.checked ? 'checked' : ''} style="cursor: pointer;">
-                  <button class="edit-btn" data-id="${item.id}" title="Modifier">✏️</button>
-                  ${qtyBadge}
-                  ${priceBadge}
-                  <span class="item-name">${item.name}</span>
-                </div>
-                <button class="delete-btn" data-id="${item.id}" title="Supprimer">✕</button>
-              `;
-              ul.appendChild(li);
-            });
-
-            card.appendChild(ul);
-            listContainer.appendChild(card);
-          }
-        });
-
-        // Écouteurs délégués
-        listContainer.querySelectorAll('.item-chk').forEach(chk => {
-          chk.addEventListener('change', (e) => {
-            const id = parseFloat(e.target.dataset.id);
-            items = items.map(i => i.id === id ? { ...i, checked: e.target.checked } : i);
-            saveItems();
-            renderList();
-          });
-        });
-
-        listContainer.querySelectorAll('.edit-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            openModal(parseFloat(e.target.dataset.id));
-          });
-        });
-
-        listContainer.querySelectorAll('.delete-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const id = parseFloat(e.target.dataset.id);
-            const target = items.find(i => i.id === id);
-            const name = target ? target.name : 'cet article';
-            if (confirm(`Supprimer "${name}" ?`)) {
-              items = items.filter(i => i.id !== id);
-              saveItems();
-              renderList();
-            }
-          });
-        });
-      }
-
-      // ÉVÉNEMENTS GLOBAUX
-      addBtn.addEventListener('click', handleAdd);
-      itemInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleAdd();
+        return i;
       });
 
-      clearBtn.addEventListener('click', () => {
-        if (items.length === 0) return;
-        if (confirm("Vider entièrement la liste de courses ?")) {
-          items = [];
-          sav
+      saveItems();
+      renderList();
+    }
+
+    function toggleCheck(id) {
+      items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
+      saveItems();
+      renderList();
+    }
+
+    function deleteItem(id) {
+      const item = items.find(i => i.id === id);
+      const name = item ? item.name : "cet article";
+      if (confirm(`Supprimer "${name}" ?`)) {
+        items = items.filter(i => i.id !== id);
+        saveItems();
+        renderList();
+      }
+    }
+
+    function clearAllItems() {
+      if (items.length === 0) return;
+      if (confirm("Vider entièrement la liste de courses ?")) {
+        items = [];
+        saveItems();
+        renderList();
+      }
+    }
+
+    function sendByEmail() {
+      if (items.length === 0) {
+        alert("La liste est vide, ajoute des articles avant d'envoyer !");
+        return;
+      }
+
+      let emailBody = "🛒 MA LISTE DE COURSES ORDONNÉE\n\n";
+
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+        if (categoryItems.length > 0) {
+          emailBody += `--- ${category} ---\n`;
+          categoryItems.forEach(item => {
+            const status = item.checked ? "[FAIT] " : "[ ] ";
+            const qty = item.quantity ? `(${item.quantity}) ` : "";
+            const price = (typeof item.estimatedPrice === 'number') ? ` [~${item.estimatedPrice.toFixed(2)} €]` : "";
+            emailBody += `${status}${qty}${item.name}${price}\n`;
+          });
+          emailBody += "\n";
+        }
+      });
+
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      emailBody += `Total estimé du panier : ${total.toFixed(2)} €\n`;
+
+      const subject = encodeURIComponent("Ma liste de courses Super U");
+      const body = encodeURIComponent(emailBody);
+
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    // 6. AFFICHAGE DES ARTICLES
+    function renderList() {
+      listContainer.innerHTML = '';
+      
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
+
+      if (items.length === 0) {
+        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
+        return;
+      }
+
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+
+        if (categoryItems.length > 0) {
+          const card = document.createElement('div');
+          card.className = 'category-card';
+
+          const title = document.createElement('h2');
+          title.className = 'category-title';
+          title.textContent = category;
+          card.appendChild(title);
+
+          const ul = document.createElement('ul');
+          categoryItems.forEach(item => {
+            const li = document.createElement('li');
+            if (item.checked) li.classList.add('checked');
+
+            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
+            const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
+            const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
+
+            li.innerHTML = `
+              <div class="item-left">
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
+                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
+                ${qtyBadge}
+                ${priceBadge}
+                <span class="item-name">${item.name}</span>
+              </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+            `;
+            ul.appendChild(li);
+          });
+
+          card.appendChild(ul);
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    // 7. GESTION DU MICROPHONE (Code exact V1.0)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        micBtn.textContent = '🛑 Écoute...';
+        micBtn.classList.add('listening');
+      };
+      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
+      recognition.onend = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      recognition.onerror = () => {
+        micBtn.textContent = '🎤 Dicter';
+        micBtn.classList.remove('listening');
+      };
+      micBtn.addEventListener('click', () => recognition.start());
+    } else {
+      micBtn.disabled = true;
+      micBtn.textContent = '🎤 Non supporté';
+    }
+
+    addBtn.addEventListener('click', () => addItem(itemInput.value));
+    itemInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addItem(itemInput.value);
+    });
+    emailBtn.addEventListener('click', sendByEmail);
+    clearBtn.addEventListener('click', clearAllItems);
+
+    renderList();
+  </script>
+</body>
+</html>
