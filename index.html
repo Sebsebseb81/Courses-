@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1.5)</title>
+  <title>Ma Liste de Courses - Super U (V1.6)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -175,7 +175,7 @@
       margin-top: 30px;
     }
 
-    /* Modale */
+    /* Fenêtre modale */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -233,19 +233,19 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.5 (V1.5)</div>
+    <div class="version-tag">Version 1.6 (V1.6)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
 
   <div class="actions-bar">
-    <button class="action-btn email-btn" id="emailBtn">✉️ Envoyer par e-mail</button>
-    <button class="action-btn clear-btn" id="clearBtn">🗑️ Vider la liste</button>
+    <button class="action-btn email-btn" onclick="sendByEmail()">✉️ Envoyer par e-mail</button>
+    <button class="action-btn clear-btn" onclick="clearAllItems()">🗑️ Vider la liste</button>
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" class="input-main" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
-    <button id="addBtn">Ajouter</button>
+    <input type="text" id="itemInput" class="input-main" placeholder="Ex. 1 kg de tomates, 2 laits, thon..." />
+    <button id="addBtn" onclick="submitInput()">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
@@ -269,14 +269,14 @@
         <input type="number" step="0.01" id="editPrice" />
       </div>
       <div class="modal-actions">
-        <button class="btn-save" id="btnModalSave">Valider</button>
-        <button class="btn-cancel" id="btnModalCancel">Annuler</button>
+        <button class="btn-save" onclick="saveModalEdit()">Valider</button>
+        <button class="btn-cancel" onclick="closeModal()">Annuler</button>
       </div>
     </div>
   </div>
 
   <script>
-    // 1. RAYONS
+    // 1. ORDRE DES RAYONS
     const CATEGORIES_ORDER = [
       "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
       "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
@@ -371,22 +371,19 @@
       };
     }
 
-    // DONNÉES
+    // GESTION DU STOCKAGE
     let items = [];
     try {
       const stored = JSON.parse(localStorage.getItem('myShoppingList'));
       if (Array.isArray(stored)) {
-        items = stored.map(i => ({
-          id: i.id || Date.now() + Math.random(),
-          name: i.name || 'Article',
-          quantity: i.quantity || '',
-          estimatedPrice: (typeof i.estimatedPrice === 'number') ? i.estimatedPrice : 2.50,
-          category: i.category || 'Divers / Non classé',
-          checked: !!i.checked
-        }));
+        items = stored;
       }
     } catch (e) {
       items = [];
+    }
+
+    function saveItems() {
+      localStorage.setItem('myShoppingList', JSON.stringify(items));
     }
 
     function getCategoryForProduct(name) {
@@ -399,57 +396,72 @@
       return "Divers / Non classé";
     }
 
-    function saveItems() {
-      localStorage.setItem('myShoppingList', JSON.stringify(items));
-    }
-
-    function handleAdd() {
-      const input = document.getElementById('itemInput');
-      const val = input.value.trim();
-      if (!val) return;
-      
-      const parsed = parseItemText(val);
-      const cat = getCategoryForProduct(parsed.name);
+    function addItem(rawText) {
+      if (!rawText || rawText.trim() === '') return;
+      const parsed = parseItemText(rawText);
+      const category = getCategoryForProduct(parsed.name);
 
       items.push({
         id: Date.now(),
         name: parsed.name,
         quantity: parsed.quantity,
         estimatedPrice: parsed.estimatedPrice,
-        category: cat,
+        category: category,
         checked: false
       });
 
       saveItems();
       renderList();
-      input.value = '';
     }
 
+    function submitInput() {
+      const input = document.getElementById('itemInput');
+      if (input.value.trim() !== '') {
+        addItem(input.value);
+        input.value = '';
+      }
+    }
+
+    document.getElementById('itemInput').onkeypress = function(e) {
+      if (e.key === 'Enter') {
+        submitInput();
+      }
+    };
+
     function toggleCheck(id) {
-      items = items.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
+      items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
       saveItems();
       renderList();
     }
 
     function deleteItem(id) {
-      const target = items.find(i => i.id === id);
-      const name = target ? target.name : 'cet article';
-      if (confirm(`Supprimer "${name}" ?`)) {
-        items = items.filter(i => i.id !== id);
+      const itemToDelete = items.find(item => item.id === id);
+      const itemName = itemToDelete ? itemToDelete.name : "cet article";
+      if (confirm(`Es-tu sûr de vouloir supprimer "${itemName}" ?`)) {
+        items = items.filter(item => item.id !== id);
+        saveItems();
+        renderList();
+      }
+    }
+
+    function clearAllItems() {
+      if (items.length === 0) return;
+      if (confirm("Es-tu sûr de vouloir vider toute la liste ?")) {
+        items = [];
         saveItems();
         renderList();
       }
     }
 
     // MODALE ÉDITION
-    function openModal(id) {
+    function openEditModal(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
       document.getElementById('editId').value = item.id;
       document.getElementById('editQty').value = item.quantity || '';
       document.getElementById('editName').value = item.name || '';
-      document.getElementById('editPrice').value = item.estimatedPrice.toFixed(2);
+      document.getElementById('editPrice').value = Number(item.estimatedPrice || 2.50).toFixed(2);
 
       document.getElementById('modalBackdrop').style.display = 'flex';
     }
@@ -458,7 +470,7 @@
       document.getElementById('modalBackdrop').style.display = 'none';
     }
 
-    document.getElementById('btnModalSave').onclick = function() {
+    function saveModalEdit() {
       const id = parseFloat(document.getElementById('editId').value);
       const newQty = document.getElementById('editQty').value.trim();
       const newName = document.getElementById('editName').value.trim();
@@ -482,80 +494,75 @@
       saveItems();
       renderList();
       closeModal();
-    };
-
-    document.getElementById('btnModalCancel').onclick = closeModal;
-
-    function clearAll() {
-      if (items.length === 0) return;
-      if (confirm("Vider entièrement la liste de courses ?")) {
-        items = [];
-        saveItems();
-        renderList();
-      }
     }
 
-    function sendEmail() {
+    function sendByEmail() {
       if (items.length === 0) {
         alert("La liste est vide !");
         return;
       }
-      let body = "🛒 MA LISTE DE COURSES\n\n";
-      CATEGORIES_ORDER.forEach(cat => {
-        const catItems = items.filter(i => i.category === cat);
-        if (catItems.length > 0) {
-          body += `--- ${cat} ---\n`;
-          catItems.forEach(i => {
-            const st = i.checked ? "[X] " : "[ ] ";
-            const q = i.quantity ? `(${i.quantity}) ` : "";
-            body += `${st}${q}${i.name} [~${i.estimatedPrice.toFixed(2)} €]\n`;
+
+      let emailBody = "🛒 MA LISTE DE COURSES ORDONNÉE\n\n";
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+        if (categoryItems.length > 0) {
+          emailBody += `--- ${category} ---\n`;
+          categoryItems.forEach(item => {
+            const status = item.checked ? "[FAIT] " : "[ ] ";
+            const qty = item.quantity ? `(${item.quantity}) ` : "";
+            const price = (typeof item.estimatedPrice === 'number') ? ` [~${item.estimatedPrice.toFixed(2)} €]` : "";
+            emailBody += `${status}${qty}${item.name}${price}\n`;
           });
-          body += "\n";
+          emailBody += "\n";
         }
       });
-      const total = items.reduce((s, i) => s + (i.estimatedPrice || 0), 0);
-      body += `Total estimé : ${total.toFixed(2)} €\n`;
-      window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste Super U")}&body=${encodeURIComponent(body)}`;
+
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
+      emailBody += `Total estimé : ${total.toFixed(2)} €\n`;
+
+      window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
     }
 
-    // RENDU
+    // AFFICHAGE
     function renderList() {
-      const container = document.getElementById('listContainer');
-      container.innerHTML = '';
-
-      const total = items.reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+      const listContainer = document.getElementById('listContainer');
+      listContainer.innerHTML = '';
+      
+      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
       document.getElementById('budgetDisplay').textContent = `Total estimé : ${total.toFixed(2)} €`;
 
       if (items.length === 0) {
-        container.innerHTML = '<p class="empty-msg">Ta liste est vide. Saisis ou dicte un article !</p>';
+        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Saisis ou dicte des articles ci-dessus !</p>';
         return;
       }
 
-      CATEGORIES_ORDER.forEach(cat => {
-        const catItems = items.filter(i => i.category === cat);
-        if (catItems.length > 0) {
+      CATEGORIES_ORDER.forEach(category => {
+        const categoryItems = items.filter(item => item.category === category);
+
+        if (categoryItems.length > 0) {
           const card = document.createElement('div');
           card.className = 'category-card';
 
           const title = document.createElement('h2');
           title.className = 'category-title';
-          title.textContent = cat;
+          title.textContent = category;
           card.appendChild(title);
 
           const ul = document.createElement('ul');
-          catItems.forEach(item => {
+          categoryItems.forEach(item => {
             const li = document.createElement('li');
             if (item.checked) li.classList.add('checked');
 
-            const qBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
-            const pBadge = `<span class="price-badge">~${item.estimatedPrice.toFixed(2)} €</span>`;
+            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
+            const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
+            const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
 
             li.innerHTML = `
               <div class="item-left">
                 <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="openModal(${item.id})" title="Modifier">✏️</button>
-                ${qBadge}
-                ${pBadge}
+                <button class="edit-btn" onclick="openEditModal(${item.id})" title="Modifier">✏️</button>
+                ${qtyBadge}
+                ${priceBadge}
                 <span class="item-name">${item.name}</span>
               </div>
               <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
@@ -564,39 +571,26 @@
           });
 
           card.appendChild(ul);
-          container.appendChild(card);
+          listContainer.appendChild(card);
         }
       });
     }
 
-    // ÉCOUTEURS FORMULAIRE
-    document.getElementById('addBtn').onclick = handleAdd;
-    document.getElementById('itemInput').onkeydown = function(e) {
-      if (e.key === 'Enter') handleAdd();
-    };
-    document.getElementById('emailBtn').onclick = sendEmail;
-    document.getElementById('clearBtn').onclick = clearAll;
-
-    // MICROPHONE V1.0
+    // MICROPHONE
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const mic = document.getElementById('micBtn');
+    const micBtn = document.getElementById('micBtn');
     if (SpeechRecognition) {
-      const rec = new SpeechRecognition();
-      rec.lang = 'fr-FR';
-      rec.continuous = false;
-      rec.interimResults = false;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-      rec.onstart = () => {
-        mic.textContent = '🛑 Écoute...';
-        mic.classList.add('listening');
+      recognition.onstart = () => {
+        micBtn.textContent = '🛑 Écoute...';
+        micBtn.classList.add('listening');
       };
-      rec.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        document.getElementById('itemInput').value = text;
-        handleAdd();
+      recognition.onresult = (event) => {
+        addItem(event.results[0][0].transcript);
       };
-      rec.onend = () => {
-        mic.textContent = '🎤 Dicter';
-        mic.classList.remove('listening');
-      };
-      rec.onerror = () 
+      recognition.onend = () => {
+        micBtn.textContent = '🎤 Dicter'
