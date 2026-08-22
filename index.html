@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V1.4)</title>
+  <title>Ma Liste de Courses - Super U (V1.5)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -65,7 +65,7 @@
       gap: 8px;
       margin-bottom: 15px;
     }
-    input[type="text"], input[type="number"] {
+    .input-main {
       flex: 1;
       padding: 12px;
       font-size: 15px;
@@ -175,70 +175,65 @@
       margin-top: 30px;
     }
 
-    /* Fenêtre modale */
-    .modal-overlay {
+    /* Modale */
+    .modal-backdrop {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.45);
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 9999;
     }
-    .modal-box {
-      background: white;
-      padding: 18px;
-      border-radius: 10px;
-      width: 88%;
-      max-width: 380px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    .modal-content {
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      width: 85%;
+      max-width: 360px;
+      box-sizing: border-box;
     }
-    .modal-box h3 {
+    .modal-content h3 {
       margin-top: 0;
+      font-size: 16px;
       color: #2c3e50;
-      font-size: 17px;
       margin-bottom: 12px;
     }
-    .modal-field {
-      margin-bottom: 10px;
+    .modal-group {
+      margin-bottom: 8px;
     }
-    .modal-field label {
+    .modal-group label {
       display: block;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
       color: #475569;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
-    .modal-field input {
+    .modal-group input {
       width: 100%;
       padding: 8px;
       font-size: 14px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
+      box-sizing: border-box;
     }
-    .modal-buttons {
+    .modal-actions {
       display: flex;
       gap: 8px;
-      margin-top: 15px;
+      margin-top: 14px;
     }
-    .modal-btn-save {
-      flex: 1;
-      background-color: #27ae60;
-    }
-    .modal-btn-cancel {
-      flex: 1;
-      background-color: #94a3b8;
-    }
+    .btn-save { flex: 1; background: #27ae60; }
+    .btn-cancel { flex: 1; background: #94a3b8; }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 1.4 (V1.4)</div>
+    <div class="version-tag">Version 1.5 (V1.5)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -249,33 +244,33 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
+    <input type="text" id="itemInput" class="input-main" placeholder="Ex. 1 kg de tomates, 2 laits, 500g de poulet..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
   <div id="listContainer"></div>
 
-  <!-- Boîte modale d'édition -->
-  <div class="modal-overlay" id="editModal">
-    <div class="modal-box">
+  <!-- Fenêtre modale -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-content">
       <h3>Modifier l'article</h3>
-      <input type="hidden" id="modalItemId" />
-      <div class="modal-field">
-        <label for="modalItemQty">Quantité (ex. 1 kg, 2, 500g) :</label>
-        <input type="text" id="modalItemQty" />
+      <input type="hidden" id="editId" />
+      <div class="modal-group">
+        <label for="editQty">Quantité (ex. 1 kg, 2, 500g) :</label>
+        <input type="text" id="editQty" />
       </div>
-      <div class="modal-field">
-        <label for="modalItemName">Désignation de l'article :</label>
-        <input type="text" id="modalItemName" />
+      <div class="modal-group">
+        <label for="editName">Désignation :</label>
+        <input type="text" id="editName" />
       </div>
-      <div class="modal-field">
-        <label for="modalItemPrice">Prix estimé total (€) :</label>
-        <input type="number" step="0.01" id="modalItemPrice" />
+      <div class="modal-group">
+        <label for="editPrice">Prix total (€) :</label>
+        <input type="number" step="0.01" id="editPrice" />
       </div>
-      <div class="modal-buttons">
-        <button class="modal-btn-save" id="modalSaveBtn">Valider</button>
-        <button class="modal-btn-cancel" id="modalCancelBtn">Annuler</button>
+      <div class="modal-actions">
+        <button class="btn-save" id="btnModalSave">Valider</button>
+        <button class="btn-cancel" id="btnModalCancel">Annuler</button>
       </div>
     </div>
   </div>
@@ -331,7 +326,6 @@
       "liquide vaisselle": { defaultPrice: 1.60, pricePerKgOrL: null }
     };
 
-    // 4. PARSING DU TEXTE
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
     function parseItemText(rawText) {
@@ -377,38 +371,23 @@
       };
     }
 
-    // 5. GESTION DES DONNÉES
-    let rawStored = [];
+    // DONNÉES
+    let items = [];
     try {
-      rawStored = JSON.parse(localStorage.getItem('myShoppingList')) || [];
+      const stored = JSON.parse(localStorage.getItem('myShoppingList'));
+      if (Array.isArray(stored)) {
+        items = stored.map(i => ({
+          id: i.id || Date.now() + Math.random(),
+          name: i.name || 'Article',
+          quantity: i.quantity || '',
+          estimatedPrice: (typeof i.estimatedPrice === 'number') ? i.estimatedPrice : 2.50,
+          category: i.category || 'Divers / Non classé',
+          checked: !!i.checked
+        }));
+      }
     } catch (e) {
-      rawStored = [];
+      items = [];
     }
-
-    let items = rawStored.map(item => ({
-      id: item.id || Date.now() + Math.random(),
-      name: item.name || 'Article',
-      quantity: item.quantity || '',
-      estimatedPrice: typeof item.estimatedPrice === 'number' ? item.estimatedPrice : (typeof item.price === 'number' ? item.price : 2.50),
-      category: item.category || 'Divers / Non classé',
-      checked: !!item.checked
-    }));
-
-    const itemInput = document.getElementById('itemInput');
-    const addBtn = document.getElementById('addBtn');
-    const micBtn = document.getElementById('micBtn');
-    const emailBtn = document.getElementById('emailBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const listContainer = document.getElementById('listContainer');
-    const budgetDisplay = document.getElementById('budgetDisplay');
-
-    const editModal = document.getElementById('editModal');
-    const modalItemId = document.getElementById('modalItemId');
-    const modalItemQty = document.getElementById('modalItemQty');
-    const modalItemName = document.getElementById('modalItemName');
-    const modalItemPrice = document.getElementById('modalItemPrice');
-    const modalSaveBtn = document.getElementById('modalSaveBtn');
-    const modalCancelBtn = document.getElementById('modalCancelBtn');
 
     function getCategoryForProduct(name) {
       const cleanName = (name || '').toLowerCase().trim();
@@ -424,164 +403,200 @@
       localStorage.setItem('myShoppingList', JSON.stringify(items));
     }
 
-    function addItem(rawText) {
-      if (!rawText || rawText.trim() === '') return;
-      const parsed = parseItemText(rawText);
-      const category = getCategoryForProduct(parsed.name);
+    function handleAdd() {
+      const input = document.getElementById('itemInput');
+      const val = input.value.trim();
+      if (!val) return;
+      
+      const parsed = parseItemText(val);
+      const cat = getCategoryForProduct(parsed.name);
 
       items.push({
         id: Date.now(),
         name: parsed.name,
         quantity: parsed.quantity,
         estimatedPrice: parsed.estimatedPrice,
-        category: category,
+        category: cat,
         checked: false
       });
 
       saveItems();
       renderList();
-      itemInput.value = '';
+      input.value = '';
     }
 
-    window.openEditModal = function(id) {
+    function toggleCheck(id) {
+      items = items.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
+      saveItems();
+      renderList();
+    }
+
+    function deleteItem(id) {
+      const target = items.find(i => i.id === id);
+      const name = target ? target.name : 'cet article';
+      if (confirm(`Supprimer "${name}" ?`)) {
+        items = items.filter(i => i.id !== id);
+        saveItems();
+        renderList();
+      }
+    }
+
+    // MODALE ÉDITION
+    function openModal(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      modalItemId.value = item.id;
-      modalItemQty.value = item.quantity || '';
-      modalItemName.value = item.name || '';
-      modalItemPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
+      document.getElementById('editId').value = item.id;
+      document.getElementById('editQty').value = item.quantity || '';
+      document.getElementById('editName').value = item.name || '';
+      document.getElementById('editPrice').value = item.estimatedPrice.toFixed(2);
 
-      editModal.style.display = 'flex';
-      modalItemName.focus();
-    };
-
-    function closeEditModal() {
-      editModal.style.display = 'none';
+      document.getElementById('modalBackdrop').style.display = 'flex';
     }
 
-    modalSaveBtn.onclick = function() {
-      const id = parseFloat(modalItemId.value);
-      const newQty = modalItemQty.value.trim();
-      const newName = modalItemName.value.trim();
-      const newPrice = parseFloat(modalItemPrice.value.replace(',', '.'));
+    function closeModal() {
+      document.getElementById('modalBackdrop').style.display = 'none';
+    }
 
-      items = items.map(item => {
-        if (item.id === id) {
-          const finalName = newName !== '' ? newName : item.name;
-          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : item.estimatedPrice;
+    document.getElementById('btnModalSave').onclick = function() {
+      const id = parseFloat(document.getElementById('editId').value);
+      const newQty = document.getElementById('editQty').value.trim();
+      const newName = document.getElementById('editName').value.trim();
+      const newPrice = parseFloat(document.getElementById('editPrice').value.replace(',', '.'));
+
+      items = items.map(i => {
+        if (i.id === id) {
+          const finalName = newName !== '' ? newName : i.name;
+          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : i.estimatedPrice;
           return {
-            ...item,
+            ...i,
             quantity: newQty,
             name: finalName,
             category: getCategoryForProduct(finalName),
             estimatedPrice: finalPrice
           };
         }
-        return item;
+        return i;
       });
 
       saveItems();
       renderList();
-      closeEditModal();
+      closeModal();
     };
 
-    modalCancelBtn.onclick = closeEditModal;
+    document.getElementById('btnModalCancel').onclick = closeModal;
 
-    window.toggleCheck = function(id) {
-      items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
-      saveItems();
-      renderList();
-    };
-
-    window.deleteItem = function(id) {
-      const itemToDelete = items.find(item => item.id === id);
-      const itemName = itemToDelete ? itemToDelete.name : "cet article";
-      
-      if (confirm(`Es-tu sûr de vouloir supprimer "${itemName}" de la liste ?`)) {
-        items = items.filter(item => item.id !== id);
-        saveItems();
-        renderList();
-      }
-    };
-
-    function clearAllItems() {
+    function clearAll() {
       if (items.length === 0) return;
-      if (confirm("Es-tu sûr de vouloir vider toute la liste de courses ?")) {
+      if (confirm("Vider entièrement la liste de courses ?")) {
         items = [];
         saveItems();
         renderList();
       }
     }
 
-    function sendByEmail() {
+    function sendEmail() {
       if (items.length === 0) {
-        alert("La liste est vide, ajoute des articles avant d'envoyer !");
+        alert("La liste est vide !");
         return;
       }
-
-      let emailBody = "🛒 MA LISTE DE COURSES ORDONNÉE\n\n";
-
-      CATEGORIES_ORDER.forEach(category => {
-        const categoryItems = items.filter(item => item.category === category);
-        if (categoryItems.length > 0) {
-          emailBody += `--- ${category} ---\n`;
-          categoryItems.forEach(item => {
-            const status = item.checked ? "[FAIT] " : "[ ] ";
-            const qty = item.quantity ? `(${item.quantity}) ` : "";
-            const price = (typeof item.estimatedPrice === 'number') ? ` [~${item.estimatedPrice.toFixed(2)} €]` : "";
-            emailBody += `${status}${qty}${item.name}${price}\n`;
+      let body = "🛒 MA LISTE DE COURSES\n\n";
+      CATEGORIES_ORDER.forEach(cat => {
+        const catItems = items.filter(i => i.category === cat);
+        if (catItems.length > 0) {
+          body += `--- ${cat} ---\n`;
+          catItems.forEach(i => {
+            const st = i.checked ? "[X] " : "[ ] ";
+            const q = i.quantity ? `(${i.quantity}) ` : "";
+            body += `${st}${q}${i.name} [~${i.estimatedPrice.toFixed(2)} €]\n`;
           });
-          emailBody += "\n";
+          body += "\n";
         }
       });
-
-      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
-      emailBody += `Total estimé du panier : ${total.toFixed(2)} €\n`;
-
-      const subject = encodeURIComponent("Ma liste de courses Super U");
-      const body = encodeURIComponent(emailBody);
-
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      const total = items.reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+      body += `Total estimé : ${total.toFixed(2)} €\n`;
+      window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste Super U")}&body=${encodeURIComponent(body)}`;
     }
 
-    // 6. RENDU GRAPHIQUE
+    // RENDU
     function renderList() {
-      listContainer.innerHTML = '';
-      
-      const total = items.reduce((sum, item) => sum + (item.estimatedPrice || 0), 0);
-      budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
+      const container = document.getElementById('listContainer');
+      container.innerHTML = '';
+
+      const total = items.reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+      document.getElementById('budgetDisplay').textContent = `Total estimé : ${total.toFixed(2)} €`;
 
       if (items.length === 0) {
-        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
+        container.innerHTML = '<p class="empty-msg">Ta liste est vide. Saisis ou dicte un article !</p>';
         return;
       }
 
-      CATEGORIES_ORDER.forEach(category => {
-        const categoryItems = items.filter(item => item.category === category);
-
-        if (categoryItems.length > 0) {
+      CATEGORIES_ORDER.forEach(cat => {
+        const catItems = items.filter(i => i.category === cat);
+        if (catItems.length > 0) {
           const card = document.createElement('div');
           card.className = 'category-card';
 
           const title = document.createElement('h2');
           title.className = 'category-title';
-          title.textContent = category;
+          title.textContent = cat;
           card.appendChild(title);
 
           const ul = document.createElement('ul');
-          categoryItems.forEach(item => {
+          catItems.forEach(item => {
             const li = document.createElement('li');
             if (item.checked) li.classList.add('checked');
 
-            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
-            const priceVal = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : '2.50';
-            const priceBadge = `<span class="price-badge">~${priceVal} €</span>`;
+            const qBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
+            const pBadge = `<span class="price-badge">~${item.estimatedPrice.toFixed(2)} €</span>`;
 
             li.innerHTML = `
               <div class="item-left">
                 <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="openEditModal(${item.id})" title="Modifier">✏️</button>
-                ${qtyBadge}
-                ${priceBadge}
-                <span class="item
+                <button class="edit-btn" onclick="openModal(${item.id})" title="Modifier">✏️</button>
+                ${qBadge}
+                ${pBadge}
+                <span class="item-name">${item.name}</span>
+              </div>
+              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+            `;
+            ul.appendChild(li);
+          });
+
+          card.appendChild(ul);
+          container.appendChild(card);
+        }
+      });
+    }
+
+    // ÉCOUTEURS FORMULAIRE
+    document.getElementById('addBtn').onclick = handleAdd;
+    document.getElementById('itemInput').onkeydown = function(e) {
+      if (e.key === 'Enter') handleAdd();
+    };
+    document.getElementById('emailBtn').onclick = sendEmail;
+    document.getElementById('clearBtn').onclick = clearAll;
+
+    // MICROPHONE V1.0
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const mic = document.getElementById('micBtn');
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.lang = 'fr-FR';
+      rec.continuous = false;
+      rec.interimResults = false;
+
+      rec.onstart = () => {
+        mic.textContent = '🛑 Écoute...';
+        mic.classList.add('listening');
+      };
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        document.getElementById('itemInput').value = text;
+        handleAdd();
+      };
+      rec.onend = () => {
+        mic.textContent = '🎤 Dicter';
+        mic.classList.remove('listening');
+      };
+      rec.onerror = () 
