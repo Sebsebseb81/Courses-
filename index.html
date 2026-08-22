@@ -1,12 +1,13 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 3.0 (V3.0)
+  VERSION ACTUELLE : Version 3.2 (V3.2)
   
   HISTORIQUE DES VERSIONS :
-  - V1.0 : Version initiale fonctionnelle.
+  - V1.0 : Version initiale (rayons, dictée vocale, prix de base).
   - V2.9 : Socle stable avec nettoyage de mémoire.
-  - V3.0 : Découpage multi-articles ciblé sur le mot de liaison "et" / virgules.
+  - V3.1 : Découpage multi-articles avec "et" et "plus".
+  - V3.2 : Rétablissement de la modale unique avec 3 champs simultanés (quantité, nom, prix).
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -14,7 +15,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V3.0)</title>
+  <title>Ma Liste de Courses - Super U (V3.2)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -186,13 +187,67 @@
       margin-top: 30px;
       font-size: 14px;
     }
+
+    /* Boîte modale de modification */
+    .edit-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .edit-box {
+      background: #fff;
+      padding: 16px;
+      border-radius: 10px;
+      width: 88%;
+      max-width: 360px;
+      box-sizing: border-box;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .edit-box h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+      color: #2c3e50;
+    }
+    .field-group {
+      margin-bottom: 10px;
+    }
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #475569;
+      margin-bottom: 3px;
+    }
+    .field-group input {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .btn-save { flex: 1; background: #27ae60; }
+    .btn-cancel { flex: 1; background: #94a3b8; }
   </style>
 </head>
 <body>
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 3.0 (V3.0)</div>
+    <div class="version-tag">Version 3.2 (V3.2)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -203,15 +258,39 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 litre de lait et 1 litre de coca..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 lait plus 1 coca et 2 baguettes..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
 
   <div id="listContainer"></div>
 
+  <!-- Boîte de dialogue unique à 3 champs -->
+  <div class="edit-overlay" id="editOverlay">
+    <div class="edit-box">
+      <h3>Modifier l'article</h3>
+      <input type="hidden" id="editId" />
+      <div class="field-group">
+        <label for="inputEditQty">Quantité (facultatif) :</label>
+        <input type="text" id="inputEditQty" placeholder="Ex. 1 kg, 2, 500g" />
+      </div>
+      <div class="field-group">
+        <label for="inputEditName">Désignation de l'article :</label>
+        <input type="text" id="inputEditName" placeholder="Ex. Tomates" />
+      </div>
+      <div class="field-group">
+        <label for="inputEditPrice">Prix estimé (€) :</label>
+        <input type="number" step="0.01" id="inputEditPrice" placeholder="Ex. 2.50" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-save" id="btnSaveEdit">Enregistrer</button>
+        <button class="btn-cancel" id="btnCancelEdit">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // 1. RAYONS
+    // 1. RAYONS DANS L'ORDRE DU MAGASIN
     const CATEGORIES_ORDER = [
       "1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout",
       "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles",
@@ -316,7 +395,7 @@
       };
     }
 
-    // 4. DONNÉES SÉCURISÉES
+    // 4. GESTION DES DONNÉES
     let items = [];
     try {
       const stored = localStorage.getItem('myShoppingList');
@@ -345,6 +424,15 @@
     const listContainer = document.getElementById('listContainer');
     const budgetDisplay = document.getElementById('budgetDisplay');
 
+    // Éléments de la modale
+    const editOverlay = document.getElementById('editOverlay');
+    const editId = document.getElementById('editId');
+    const inputEditQty = document.getElementById('inputEditQty');
+    const inputEditName = document.getElementById('inputEditName');
+    const inputEditPrice = document.getElementById('inputEditPrice');
+    const btnSaveEdit = document.getElementById('btnSaveEdit');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+
     function getCategoryForProduct(name) {
       const cleanName = (name || '').toLowerCase().trim();
       for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
@@ -361,12 +449,11 @@
       } catch (e) {}
     }
 
-    // AJOUT AVEC DÉCOUPAGE PAR "ET" OU VIRGULE
+    // AJOUT AVEC DÉCOUPAGE PAR "ET", "PLUS" OU VIRGULE
     function addItem(rawText) {
       if (!rawText || rawText.trim() === '') return;
 
-      // Découpe simple et sûre
-      const pieces = rawText.split(/\s+et\s+|,|\.|\;/i);
+      const pieces = rawText.split(/\s+et\s+|\s+plus\s+|,|\.|\;/i);
 
       pieces.forEach(piece => {
         const cleanPiece = piece.trim();
@@ -390,26 +477,39 @@
       itemInput.value = '';
     }
 
-    function editItem(id) {
+    // MODALE : OUVERTURE À 3 CHAMPS SIMULTANÉS
+    function openEditBox(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      const currentText = item.quantity ? `${item.quantity} ${item.name}` : item.name;
-      const newText = prompt("Modifier la désignation / quantité :", currentText);
-      if (newText === null || newText.trim() === '') return;
+      editId.value = item.id;
+      inputEditQty.value = item.quantity || '';
+      inputEditName.value = item.name || '';
+      inputEditPrice.value = (typeof item.estimatedPrice === 'number') ? item.estimatedPrice.toFixed(2) : "2.50";
 
-      const newPrice = prompt("Modifier le prix (€) :", item.estimatedPrice.toFixed(2));
-      const parsed = parseItemText(newText);
-      const cleanPrice = parseFloat((newPrice || '').replace(',', '.'));
+      editOverlay.style.display = 'flex';
+    }
+
+    function closeEditBox() {
+      editOverlay.style.display = 'none';
+    }
+
+    btnSaveEdit.addEventListener('click', () => {
+      const id = parseFloat(editId.value);
+      const newQty = inputEditQty.value.trim();
+      const newName = inputEditName.value.trim();
+      const newPrice = parseFloat(inputEditPrice.value.replace(',', '.'));
 
       items = items.map(i => {
         if (i.id === id) {
+          const finalName = newName !== '' ? newName : i.name;
+          const finalPrice = (!isNaN(newPrice) && newPrice >= 0) ? Number(newPrice.toFixed(2)) : i.estimatedPrice;
           return {
             ...i,
-            name: parsed.name,
-            quantity: parsed.quantity,
-            category: getCategoryForProduct(parsed.name),
-            estimatedPrice: !isNaN(cleanPrice) && cleanPrice >= 0 ? Number(cleanPrice.toFixed(2)) : parsed.estimatedPrice
+            quantity: newQty,
+            name: finalName,
+            category: getCategoryForProduct(finalName),
+            estimatedPrice: finalPrice
           };
         }
         return i;
@@ -417,7 +517,10 @@
 
       saveItems();
       renderList();
-    }
+      closeEditBox();
+    });
+
+    btnCancelEdit.addEventListener('click', closeEditBox);
 
     function toggleCheck(id) {
       items = items.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
@@ -471,7 +574,7 @@
       window.location.href = `mailto:?subject=${encodeURIComponent("Ma liste de courses Super U")}&body=${encodeURIComponent(emailBody)}`;
     }
 
-    // 5. AFFICHAGE DES ARTICLES ET MESSAGE INITIAL
+    // 5. AFFICHAGE DES ARTICLES ET MESSAGE D'ACCUEIL
     function renderList() {
       listContainer.innerHTML = '';
       
@@ -479,84 +582,4 @@
       budgetDisplay.textContent = `Total estimé du panier : ${total.toFixed(2)} €`;
 
       if (items.length === 0) {
-        listContainer.innerHTML = '<p class="empty-msg">Ta liste est vide. Dicte ou écris des articles ci-dessus !</p>';
-        return;
-      }
-
-      CATEGORIES_ORDER.forEach(category => {
-        const categoryItems = items.filter(item => item.category === category);
-
-        if (categoryItems.length > 0) {
-          const card = document.createElement('div');
-          card.className = 'category-card';
-
-          const title = document.createElement('h2');
-          title.className = 'category-title';
-          title.textContent = category;
-          card.appendChild(title);
-
-          const ul = document.createElement('ul');
-          categoryItems.forEach(item => {
-            const li = document.createElement('li');
-            if (item.checked) li.classList.add('checked');
-
-            const qtyBadge = item.quantity ? `<span class="qty-badge">${item.quantity}</span>` : '';
-            const priceBadge = `<span class="price-badge">~${item.estimatedPrice.toFixed(2)} €</span>`;
-
-            li.innerHTML = `
-              <div class="item-left">
-                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.id})" style="cursor: pointer;">
-                <button class="edit-btn" onclick="editItem(${item.id})" title="Modifier">✏️</button>
-                ${qtyBadge}
-                ${priceBadge}
-                <span class="item-name">${item.name}</span>
-              </div>
-              <button class="delete-btn" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
-            `;
-            ul.appendChild(li);
-          });
-
-          card.appendChild(ul);
-          listContainer.appendChild(card);
-        }
-      });
-    }
-
-    // 6. MICROPHONE
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        micBtn.textContent = '🛑 Écoute...';
-        micBtn.classList.add('listening');
-      };
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript);
-      recognition.onend = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      recognition.onerror = () => {
-        micBtn.textContent = '🎤 Dicter';
-        micBtn.classList.remove('listening');
-      };
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.textContent = '🎤 Non supporté';
-    }
-
-    addBtn.addEventListener('click', () => addItem(itemInput.value));
-    itemInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addItem(itemInput.value);
-    });
-    emailBtn.addEventListener('click', sendByEmail);
-    clearBtn.addEventListener('click', clearAllItems);
-
-    renderList();
-  </script>
-</body>
-</html>
+        listContainer.innerHTML = '<p class="
