@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -36,7 +36,7 @@
   </div>
 
   <div class="input-section">
-    <input type="text" id="itemInput" placeholder="Ex. 1 kg de sucre..." />
+    <input type="text" id="itemInput" placeholder="Ex. 1 kg de tomates..." />
     <button id="addBtn">Ajouter</button>
     <button id="micBtn" class="mic-btn">🎤 Dicter</button>
   </div>
@@ -44,45 +44,39 @@
   <div id="listContainer"></div>
 
   <script>
-    const CATEGORIES_ORDER = ["1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout", "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles", "7. Petit-Déjeuner, Pains & Gâteaux", "8. Ingrédients Pâtisserie & Cuisine", "9. Entretien de la Maison & Linge", "10. Frais Emballé & Traiteur", "11. Volaille, Boucherie & Fromage à la coupe", "12. Fruits & Légumes Frais", "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"];
-    const PRICE_DATABASE = { "lait": 1.10, "sucre": 1.50, "oeuf": 2.50, "beurre": 2.30, "tomate": 2.50, "poulet": 5.50 };
+    const CATEGORIES = ["1. Librairie & Culture", "2. Bazar & Maison", "3. Papier & Essuie-tout", "4. Boissons & Apéritif", "5. Hygiène & Beauté", "6. Épicerie Salée & Huiles", "7. Petit-Déjeuner, Pains & Gâteaux", "8. Ingrédients Pâtisserie & Cuisine", "9. Entretien de la Maison & Linge", "10. Frais Emballé & Traiteur", "11. Volaille, Boucherie & Fromage à la coupe", "12. Fruits & Légumes Frais", "13. Poissonnerie", "14. Crèmerie & Produits Laitiers", "15. Surgelés", "Divers / Non classé"];
     
+    // Base de données complète
+    const PRICING = { "lait": 1.10, "sucre": 1.50, "oeuf": 2.50, "beurre": 2.30, "tomate": 2.50, "poulet": 5.50, "sopal": 2.50, "thon": 2.00, "baguette": 1.20, "coca": 1.80 };
+    const KEYWORDS = {
+      "12. Fruits & Légumes Frais": ["tomate", "carotte", "pomme"],
+      "8. Ingrédients Pâtisserie & Cuisine": ["sucre", "oeuf", "farine"],
+      "7. Petit-Déjeuner, Pains & Gâteaux": ["baguette", "pain", "café"],
+      "3. Papier & Essuie-tout": ["sopal", "papier"]
+    };
+
     let items = JSON.parse(localStorage.getItem('myShoppingList')) || [];
 
     function saveAndRender() { localStorage.setItem('myShoppingList', JSON.stringify(items)); renderList(); }
 
-    function parseItemText(rawText) {
-      const regex = /^(\d+(?:[.,]\d+)?)\s*(kg|g|l)?\s*(.*)$/i;
-      const match = rawText.match(regex);
-      let qty = match ? parseFloat(match[1].replace(',', '.')) : 1;
-      let name = match ? match[3].trim() : rawText.trim();
-      let basePrice = PRICE_DATABASE[name.toLowerCase()] || 2.50;
-      return { name, quantity: qty, price: basePrice * qty, category: getCategory(name) };
+    function getCat(name) {
+      for (const cat in KEYWORDS) if (KEYWORDS[cat].some(k => name.toLowerCase().includes(k))) return cat;
+      return "Divers / Non classé";
     }
-
-    function getCategory(name) { return "Divers / Non classé"; /* Simplifié pour la robustesse */ }
 
     function addItem(rawText) {
       if (!rawText) return;
-      items.push({ id: Date.now(), ...parseItemText(rawText), checked: false, isCustom: false });
+      const cleanName = rawText.replace(/^\d+/, '').trim();
+      const basePrice = Object.keys(PRICING).find(k => cleanName.toLowerCase().includes(k)) ? PRICING[Object.keys(PRICING).find(k => cleanName.toLowerCase().includes(k))] : 2.50;
+      items.push({ id: Date.now(), name: cleanName, price: basePrice, category: getCat(cleanName), checked: false });
       saveAndRender(); document.getElementById('itemInput').value = '';
     }
 
-    function editPrice(id) {
-      const item = items.find(i => i.id === id);
-      const newPrice = prompt("Modifier le prix :", item.price.toFixed(2));
-      if (newPrice) { item.price = parseFloat(newPrice.replace(',', '.')); item.isCustom = true; saveAndRender(); }
-    }
-
-    function editItem(id) {
-      const item = items.find(i => i.id === id);
-      const newName = prompt("Renommer l'article :", item.name);
-      if (newName) { item.name = newName; saveAndRender(); }
-    }
-
-    function deleteItem(id) { items = items.filter(i => i.id !== id); saveAndRender(); }
-
-    function clearAllItems() { if (confirm("Tout vider ?")) { items = []; saveAndRender(); } }
+    function editPrice(id) { const item = items.find(i => i.id == id); const p = prompt("Prix :", item.price); if(p) { item.price = parseFloat(p); saveAndRender(); } }
+    function editName(id) { const item = items.find(i => i.id == id); const n = prompt("Nom :", item.name); if(n) { item.name = n; item.category = getCat(n); saveAndRender(); } }
+    function deleteItem(id) { items = items.filter(i => i.id != id); saveAndRender(); }
+    function clearAllItems() { if(confirm("Vider ?")) { items = []; saveAndRender(); } }
+    function sendByEmail() { alert("Copie la liste manuellement en attendant une future mise à jour !"); }
 
     function renderList() {
       const listContainer = document.getElementById('listContainer');
@@ -90,18 +84,17 @@
       const total = items.reduce((sum, i) => sum + i.price, 0);
       document.getElementById('budgetDisplay').textContent = `Total estimé : ${total.toFixed(2)} €`;
       
-      CATEGORIES_ORDER.forEach(cat => {
-        const catItems = items.filter(i => i.category === cat);
+      CATEGORIES.forEach(cat => {
+        const catItems = items.filter(i => i.category == cat);
         if (catItems.length > 0) {
           const card = document.createElement('div');
           card.className = 'category-card';
           card.innerHTML = `<div class="category-title">${cat}</div><ul></ul>`;
           catItems.forEach(item => {
             const li = document.createElement('li');
-            li.innerHTML = `<input type="checkbox" ${item.checked?'checked':''} onchange="items.find(i=>i.id==${item.id}).checked=this.checked; saveAndRender();">
+            li.innerHTML = `<input type="checkbox" onchange="deleteItem(${item.id})"> 
             <span class="price-badge" onclick="editPrice(${item.id})">${item.price.toFixed(2)} €</span> 
-            ${item.name}
-            <div class="btn-group"><button class="edit-btn" onclick="editItem(${item.id})">✏️</button><button class="delete-btn" onclick="deleteItem(${item.id})">✕</button></div>`;
+            ${item.name} <div class="btn-group"><button class="edit-btn" onclick="editName(${item.id})">✏️</button><button class="delete-btn" onclick="deleteItem(${item.id})">✕</button></div>`;
             card.querySelector('ul').appendChild(li);
           });
           listContainer.appendChild(card);
@@ -109,7 +102,6 @@
       });
     }
 
-    // Dictée
     const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     rec.lang = 'fr-FR';
     rec.onresult = (e) => addItem(e.results[0][0].transcript);
