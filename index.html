@@ -1,14 +1,13 @@
 <!--
   ===================================================================
   PROJET : Ma Liste de Courses - Super U
-  VERSION ACTUELLE : Version 2.4 (V2.4)
+  VERSION ACTUELLE : Version 2.5 (V2.5)
   
   HISTORIQUE DES VERSIONS :
-  - V1.0 : Version initiale (rayons, dictée vocale, prix de base).
-  - V1.8 : Sécurisation du stockage local et message d'accueil.
-  - V2.1 : Panneau d'édition unique avec 3 champs simultanés (✏️).
-  - V2.3 : Rétablissement garanti du message initial.
-  - V2.4 : Découpage intelligent des phrases continues basé sur les quantités.
+  - V1.0 : Version initiale fonctionnelle.
+  - V1.8 : Sécurisation du stockage et message d'accueil.
+  - V2.1 : Panneau d'édition unique avec 3 champs (✏️).
+  - V2.5 : Découpage multi-articles par algorithme universel (compatible 100% mobile).
   ===================================================================
 -->
 <!DOCTYPE html>
@@ -16,7 +15,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Liste de Courses - Super U (V2.4)</title>
+  <title>Ma Liste de Courses - Super U (V2.5)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -247,7 +246,7 @@
 
   <div class="header-container">
     <h1>🛒 Ma Liste de Courses</h1>
-    <div class="version-tag">Version 2.4 (V2.4)</div>
+    <div class="version-tag">Version 2.5 (V2.5)</div>
   </div>
   
   <div class="budget-banner" id="budgetDisplay">Total estimé : 0.00 €</div>
@@ -349,33 +348,47 @@
 
     const NUMBER_WORDS = { "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "douze": 12 };
 
-    // 4. DÉCOUPAGE INTELLIGENT DES PHRASES CONTINUES
+    // 4. DÉCOUPAGE UNIVERSEL
+    function isStartOfQuantity(word) {
+      if (!word) return false;
+      const clean = word.toLowerCase();
+      if (!isNaN(parseFloat(clean))) return true;
+      if (NUMBER_WORDS[clean] !== undefined) return true;
+      return false;
+    }
+
     function splitMultiItems(rawText) {
       if (!rawText) return [];
       let text = rawText.trim();
-      
-      // Suppression des formules d'introduction
       text = text.replace(/^(alors\s+)?(on\s+va\s+prendre|je\s+veux|il\s+me\s+faut|ajoute|mets|rajoute|donne-moi)\s+/i, '');
 
-      // Étape 1 : coupure par ponctuations ou conjonctions évidentes
-      let parts = text.split(/(?:,|\.|\;|\r?\n|\bet\b|\bpuis\b|\bensuite\b)+/gi)
-                      .map(p => p.trim())
-                      .filter(p => p.length > 0);
+      // Découpe par ponctuation ou mots de liaison
+      const roughParts = text.split(/,|\.|\;|\r?\n|\bet\b|\bpuis\b|\bensuite\b/i);
+      const results = [];
 
-      const finalSegments = [];
-      const qtyKeywordsPattern = "\\b(?:\\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze)\\s*(?:kg|kilos?|g|grammes?|l|litres?|boîtes?|boites?|paquets?|bouteilles?|pots?|tranches?|sacs?)?\\b";
+      roughParts.forEach(part => {
+        const words = part.trim().split(/\s+/);
+        if (words.length === 0 || words[0] === '') return;
 
-      // Étape 2 : pour chaque morceau, chercher si plusieurs articles sont collés sans ponctuation
-      parts.forEach(part => {
-        // Détection de tout nouveau nombre précédé d'un mot (pour scinder ex. "farine 3 kg de sucre")
-        const regexSplit = new RegExp(`(?<=\\D)\\s+(?=${qtyKeywordsPattern})`, 'gi');
-        const subParts = part.split(regexSplit);
-        subParts.forEach(sp => {
-          if (sp.trim().length > 0) finalSegments.push(sp.trim());
-        });
+        let currentSegment = [];
+
+        for (let i = 0; i < words.length; i++) {
+          const w = words[i];
+          if (currentSegment.length > 0 && isStartOfQuantity(w)) {
+            // Nouveau nombre détecté au milieu d'une phrase -> nouvel article
+            results.push(currentSegment.join(' '));
+            currentSegment = [w];
+          } else {
+            currentSegment.push(w);
+          }
+        }
+
+        if (currentSegment.length > 0) {
+          results.push(currentSegment.join(' '));
+        }
       });
 
-      return finalSegments;
+      return results.filter(r => r.trim().length > 0);
     }
 
     function parseItemText(rawText) {
@@ -501,7 +514,6 @@
       itemInput.value = '';
     }
 
-    // MODIFICATION DE L'ARTICLE
     function openEditBox(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
@@ -580,4 +592,6 @@
       let emailBody = "🛒 MA LISTE DE COURSES ORDONNÉE\n\n";
 
       CATEGORIES_ORDER.forEach(category => {
-        const categoryItems = items.filter(item => item.category 
+        const categoryItems = items.filter(item => item.category === category);
+        if (categoryItems.length > 0) {
+         
